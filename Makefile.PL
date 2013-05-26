@@ -31,3 +31,4 @@ WriteMakefile(
         TESTS => 't/*.t t/*/*.t',
     },
 );
+

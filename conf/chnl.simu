@@ -12,34 +12,15 @@ my %tmap = (
 
 {
     # 打包
-    pack => sub {
-        $pack->pack(+shift); 
-    },
-
     # 解包
-    unpack => sub {
-        $pack->unpack(+shift);
-    },
-
     # 获取内部交易代码
-    tcode => sub {
-        my $req = shift;
-        my $tstr = '';
-        $tmap{$tstr};
-    },
-
     # 内部请求的debug字符串
-    debug_req => sub {
-        my $req = shift;
-        $pack->debug_8583($req);
-    },
-    
     # 内部应答debug字符串
-    debug_res => sub {
-        my $res = shift;
-        $pack->debug_8583($res);
-        
-    },
+    pack      => sub { $pack->pack(+shift); },
+    unpack    => sub { $pack->unpack(+shift); },
+    debug_req => sub { $pack->debug_8583(+shift); },
+    debug_res => sub { $pack->debug_8583(+shift); },
+    tcode     => sub { my $req = shift; my $tstr = ''; $tmap{$tstr}; },
 };
 
 __END__

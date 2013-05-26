@@ -7,18 +7,26 @@ use POE::Filter::Block;
 use POE::Filter::HTTP::Parser;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
 
-#
+#--------------------------------------------
 #  name   => '银行名称',
 #  host   => '银行IP',
 #  port   => '银行端口',
 #  codec  => '过滤器',
 #  proc   => \%proc,
-#
+#--------------------------------------------
+# Zero::Bank::SPD->new(
+#     name => 'spd',
+#     host => '192.168.1.10',
+#     port => 9999,
+#     codec => 'ascii 4',
+#     proc  => \%proc,
+# );
+#--------------------------------------------
 sub new {
     my $class = shift;
     my $self = bless { @_ }, $class;
 
-    # 子类初始化
+    # 子类初始化-每个银行有自己特殊的处理:包括pack/unpack, 数据库操作等等
     return $self->_init();
 }
 
@@ -34,9 +42,10 @@ sub spawn {
     $self->{logger} = $logger->clone('bank-' . $self->{name} . '.log');
     $self->{zcfg}   = $zcfg;
 
-    # 子进程下的初始化
+    # 子进程下的初始化 : 主要是数据库操作的初始化
     $self->_setup();
 
+    # 创建银行POS进程
     POE::Session->create(
         object_states => [ 
             $self => { 
@@ -62,32 +71,25 @@ sub on_tran {
     my $self = $_[OBJECT];
     my $tran = $_[ARG0];
     
-    $self->{logger}->debug("收到交易:\n" . Data::Dump->dump($tran));
+    # $self->{logger}->debug("收到交易:\n" . Data::Dump->dump($tran));
    
     # 连接银行
-    $self->{logger}->debug("连接银行[$self->{host}:$self->{port}]");
+    $self->{logger}->debug("连接银行[$self->{host}:$self->{port}]...");
     my $bsock = IO::Socket::INET->new(
        PeerAddr => $self->{host},
        PeerPort => $self->{port},
        Proto    => 'tcp',
     );
 
-    # codec顾虑器配置
+    # codec-->过滤器配置
     my $filter;
     my $fargs;
-    if ($self->{codec} =~ /ascii\s+(\d+)/) {
-        $filter = 'POE::Filter::Block';
-        $fargs  = [ LengthCodec => &ascii_n($1) ];
-    } 
-    elsif($self->{codec} =~ /binary\s+(\d+)/) {
-        $filter = 'POE::Filter::Block';
-        $fargs  = [ LengthCodec => &binary_n($1) ];
-    }
-    elsif($self->{codec} =~ /http/) {
-        $filter = 'POE::Filter::HTTP::Parser';
-        $fargs  = [ ];
-    }
+    if   ($self->{codec} =~ /ascii\s+(\d+)/)  { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => &ascii_n($1) ]; } 
+    elsif($self->{codec} =~ /binary\s+(\d+)/) { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => &binary_n($1) ]; }
+    elsif($self->{codec} =~ /http/) { $filter = 'POE::Filter::HTTP::Parser'; $fargs  = [ ]; }
+    else {}
 
+    # 传送带
     my $wheel = POE::Wheel::ReadWrite->new(
         Handle       => $bsock,
         Filter       => $filter->new(@$fargs),
@@ -96,12 +98,13 @@ sub on_tran {
         FlushedEvent => 'on_bank_flush',
     );
 
-    # 渠道请求 -->  银行请求
+    # 调用定制处理c2b: 渠道请求-->银行请求
     my $breq = $self->{proc}{$tran->{b_tcode}}{c2b}->($self, $tran);
     $self->{logger}->debug("breq:".Data::Dump->dump($breq));
     $tran->{breq} = $breq;
     $tran->{bid}  = $wheel->ID();
-    # 保存到堆: 通道+交易
+
+    # 保存交易到堆: 通道+交易
     $_[HEAP]{bank}{$wheel->ID()} = {
         wheel => $wheel, 
         tran  => $tran,
@@ -124,17 +127,19 @@ sub on_bank_packet {
     my $packet = $_[ARG0];
     my $bid    = $_[ARG1];
 
+    # 记录银行应答报文
     $self->{logger}->debug_hex("收到银行报文<<<<<<<<:",  $packet);
 
     # 删除堆上:  通道+交易
     my $t = delete $_[HEAP]{bank}{$bid};
     my $tran = $t->{tran};
 
-    # 银行报文 ---> 银行应答
+    # 解包: 银行报文 ---> 银行应答
     my $bres = $self->unpack($packet);
     $tran->{bres} = $bres;
   
     ################################################# 
+    # 调用b2c定制处理:
     # 银行应答 ---> 渠道应答, (插入数据库, 提交)
     ################################################# 
     my $cres = $self->{proc}{$tran->{b_tcode}}{b2c}->($self, $tran);

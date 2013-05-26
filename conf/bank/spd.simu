@@ -1,43 +1,34 @@
 #!/usr/bin/perl
 use JSON::XS;
 
+#---------------------------------------------------
+#  pack      : 打包
+#  unpack    : 解包
+#  tcode     : 获取内部交易代码
+#  debug_req : 交易请求内部格式的字符串表示
+#  debug_res : 交易应答内部格式的字符串表示
+#---------------------------------------------------
+
+my $_debug = sub {
+    my $req = shift;
+    my @line;
+    for (keys %$req) {
+        push @line, sprintf("%-15s    => [%s]", $_, $req->{$_});
+    }
+    join "\n", @line;
+};
 
 {
     # 打包
-    pack => sub {
-        encode_json(+shift); 
-    },
-
     # 解包
-    unpack => sub {
-        decode_json(+shift);
-    },
-
     # 获取内部交易代码
-    tcode => sub {
-        shift->{tcode};
-    },
-
-    # 内部请求的debug字符串
-    debug_req => sub {
-        my $req = shift;
-        my @line;
-        for (keys %$req) {
-            push @line, sprintf("%-15s    => [%s]", $_, $req->{$_});
-        }
-        join "\n", @line;
-    },
-    
+    # 内部请求debug字符串
     # 内部应答debug字符串
-    debug_res => sub {
-        my $res = shift;
-        my @line;
-        for (keys %$res) {
-            push @line, sprintf("%-15s    => [%s]", $_, $res->{$_});
-        }
-        join "\n", @line;
-        
-    },
+    pack   => sub { encode_json(+shift); },
+    unpack => sub { decode_json(+shift); },
+    tcode  => sub { shift->{tcode};      },
+    debug_req => sub { $debug->(+shift); },
+    debug_res => sub { $debug->(+shift); },
 };
 
 __END__

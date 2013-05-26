@@ -2,11 +2,12 @@ package Zero::Bank::ICBC;
 use strict;
 use warnings;
 use base qw/Zero::Bank/;
+use Zeta::Pack::8583;
 
-sub _init  { warn "Zero::Bank::ICBC _init called"; return shift; }
+sub _init  { $self->{_pack} = Zeta::Pack::8583->new(conf => \*DATA); $self}
 sub _setup { warn "Zero::Bank::ICBC _setup called"; return shift; }
-sub pack   { shift; return shift; }
-sub unpack { shift; return shift; }
+sub pack   { shift->{_pack}->pack(+shift);   }
+sub unpack { shift->{_pack}->unpack(+shift); }
 
 1;
 

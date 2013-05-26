@@ -21,7 +21,6 @@ sub route {
     $tran->{c_tcode} = 'co';
 
     $tran->{b_tcode} = 'co';
-
     # 测试路由
     return {
         dst   => 'spd',

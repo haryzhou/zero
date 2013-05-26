@@ -10,6 +10,10 @@ my $pack = Zeta::Pack::8583->new( conf => $fh);
 my %tmap = (
 );
 
+
+#
+# 返回值
+#
 {
     # 打包
     # 解包
@@ -18,9 +22,9 @@ my %tmap = (
     # 内部应答debug字符串
     pack      => sub { $pack->pack(+shift); },
     unpack    => sub { $pack->unpack(+shift); },
+    tcode     => sub { my $req = shift; my $tstr = ''; $tmap{$tstr}; },
     debug_req => sub { $pack->debug_8583(+shift); },
     debug_res => sub { $pack->debug_8583(+shift); },
-    tcode     => sub { my $req = shift; my $tstr = ''; $tmap{$tstr}; },
 };
 
 __END__

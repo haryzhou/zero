@@ -7,6 +7,9 @@ use Time::HiRes qw/gettimeofday tv_interval/;
 use POE::Filter::Block;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
 
+my %tmap = (
+);
+
 #
 # name => 'cardsv',
 # lfd  => $lfd,
@@ -90,16 +93,16 @@ sub on_chnl_packet {
     # 渠道请求报文 - 解包
     my $creq = $self->unpack($packet);
 
-    my $ts_in = [ gettimeofday ];
-    my $c_tcode;
+    # 设置内部交易代码(creq组匹配串)
+    my $tstr;
 
     # 交易记录
     my $tran = {
-        chnl  => $self->{name},
-        creq  => $creq,
-        cid   => $cid,
-        ts_in => $ts_in,
-        
+        chnl    => $self->{name},
+        cid     => $cid,
+        creq    => $creq,
+        c_tcode => $tmap{$tstr},
+        ts_in   => [gettimeofday],
     };
     $_[HEAP]{chnl}{$cid}{tran} = $tran;
 

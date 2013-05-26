@@ -1,6 +1,7 @@
 目录说明:
 
 1. 配置文件目录
+
 conf/
     chnl/            : 渠道配置目录
         t/           : 测试目录
@@ -10,8 +11,8 @@ conf/
         ryx.conf     : 渠道商ryx的配置,同cardsv
     bank/            : 银行配置目录
         spd/         : 银行-spd配置
-            co.c2b   : 银行-spd定制开发接口c2b()
-            co.b2c   : 银行-spd定制开发接口b2c()
+            co.c2b   : 银行-spd定制开发接口c2b(渠道请求--->银行请求)
+            co.b2c   : 银行-spd定制开发接口b2c(银行应答--->渠道应答)
             co.req   : 银行-spd模拟请求数据
             co.simu  : 银行-spd交易模拟器-co交易模拟处理开发
         spd.conf     : 银行-spd配置, 包括host/port/codec
@@ -23,11 +24,13 @@ conf/
     bank.conf        : 银行配置, 此文件将读取bank/目录下每个银行的配置文件
 
 2. bin目录
+
 bin/
     tsimu  : 用来测试银行模拟器交易的
     tchnl  : 渠道交易测试(发起渠道商交易请求到zero应用)
 
 3. libexec目录
+
 libexec/
     plugin.pl  :  加载插件+应用配置
     main.pl    :  主控函数

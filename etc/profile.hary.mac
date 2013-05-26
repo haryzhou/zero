@@ -6,7 +6,7 @@ export PLUGIN_PATH=$ZERO_HOME/plugin
 export PATH=$ZERO_HOME/bin:$ZERO_HOME/sbin:$ZETA_HOME/bin:$PATH
 export ZAPP_DEBUG=1;
 
-export DB_NAME=zdb
+export DB_NAME=zdb_dev
 export DB_USER=ypinst
 export DB_PASS=ypinst
 export DB_SCHEMA=ypinst

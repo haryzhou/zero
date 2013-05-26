@@ -103,9 +103,11 @@ sub on_chnl_packet {
     };
     $_[HEAP]{chnl}{$cid}{tran} = $tran;
 
-    # 发送交易监控消息到监控队列
-    my $msg = "$self->{name}|$c_tcode|$c_tkey|$c_mid|$ts_in->[0]|$ts_in->[1]";
-    $self->{zcfg}{monq}->send($msg, $$);
+    # 发送交易监控消息到监控队列, 如果有监控队列的话
+    if ($self->{zcfg}{monq}) {
+        # my $msg = "$self->{name}|$c_tcode|$c_tkey|$c_mid|$ts_in->[0]|$ts_in->[1]";
+        # $self->{zcfg}{monq}->send($msg, $$);
+    }
 
     # 发送到tran模块
     $_[KERNEL]->post('tran', 'on_chnl', $tran);
@@ -173,9 +175,18 @@ sub on_chnl_flush {
     my $self = $_[OBJECT];
     my $cid  = $_[ARG0];
   
-    my $tran = $_[HEAP]{chnl}{$cid}{tran};
-    $self->{logger}->debug("交易[] elapse[" . tv_interval($tran->{ts_in}) . "]");
-    delete $_[HEAP]{chnl}{$cid};
+    my $t = delete $_[HEAP]{chnl}{$cid};
+
+    # 应答时间戳
+    my $ts_out = [ gettimeofday ];
+    $self->{logger}->debug("交易[] elapse[" . tv_interval($t->{tran}{ts_in}, $ts_out) . "]");
+
+    # 发送监控消息
+    if ($self->{zcfg}{monq}) {
+        # res|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx
+        # my $msg;
+        # $self->{zcfg}{monq}->send($msg, $$); 
+    }
 }
 
 #

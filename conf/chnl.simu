@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+use Zeta::Pack::8583;
+
+my $fh = IO::File->new("<$ENV{ZERO_HOME}/lib/Zero/Chnl.pm");
+while(<$fh>) {
+    last if /__DATA__/;
+}
+
+my $pack = Zeta::Pack::8583->new( conf => $fh);
+my %tmap = (
+);
+
+{
+    # 打包
+    pack => sub {
+        $pack->pack(+shift); 
+    },
+
+    # 解包
+    unpack => sub {
+        $pack->unpack(+shift);
+    },
+
+    # 获取内部交易代码
+    tcode => sub {
+        my $req = shift;
+        my $tstr = '';
+        $tmap{$tstr};
+    },
+
+    # 内部请求的debug字符串
+    debug_req => sub {
+        my $req = shift;
+        $pack->debug_8583($req);
+    },
+    
+    # 内部应答debug字符串
+    debug_res => sub {
+        my $res = shift;
+        $pack->debug_8583($res);
+        
+    },
+};
+
+__END__
+

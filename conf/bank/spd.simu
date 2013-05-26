@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+use JSON::XS;
+
+
+{
+    # 打包
+    pack => sub {
+        encode_json(+shift); 
+    },
+
+    # 解包
+    unpack => sub {
+        decode_json(+shift);
+    },
+
+    # 获取内部交易代码
+    tcode => sub {
+        shift->{tcode};
+    },
+
+    # 内部请求的debug字符串
+    debug_req => sub {
+        my $req = shift;
+        my @line;
+        for (keys %$req) {
+            push @line, sprintf("%-15s    => [%s]", $_, $req->{$_});
+        }
+        join "\n", @line;
+    },
+    
+    # 内部应答debug字符串
+    debug_res => sub {
+        my $res = shift;
+        my @line;
+        for (keys %$res) {
+            push @line, sprintf("%-15s    => [%s]", $_, $res->{$_});
+        }
+        join "\n", @line;
+        
+    },
+};
+
+__END__
+

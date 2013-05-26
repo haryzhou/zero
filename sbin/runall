@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd $ZERO_HOME/log;
+
+zeta -f $ZERO_HOME/conf/zeta.conf;
+
+

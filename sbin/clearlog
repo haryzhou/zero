@@ -1,0 +1,2 @@
+cd $ZERO_HOME/log;
+rm -fr *.log;

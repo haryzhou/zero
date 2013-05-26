@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+#
+# b2c  :  银行应答 ---> 渠道应答 
+#   插入流水
+#
+sub  {
+    my ($self, $tran) = @_;
+    $self->{logger}->debug("got tran(big tran):".Data::Dump->dump($tran));
+    my @cres;
+    $cres[0]  = '0210';
+    $cres[2]  = $tran->{bres}->{pan};
+    $cres[3]  = '000000';
+    $cres[4]  = $tran->{bres}->{amt};
+    $cres[11] = $tran->{bres}->{ssn};
+    $cres[12] = substr $tran->{bres}->{tdate}, -6;
+    $cres[13] = substr $tran->{bres}->{tdate}, 0, 4;
+    $cres[39] = $tran->{bres}->{resp};
+    $cres[41] = $tran->{bres}->{tid};
+    $cres[42] = $tran->{bres}->{mid};
+    $cres[60] = '22';
+    $cres[64] = 'MMMMMMMM';
+
+    # 组织数据库流水
+    my $log = {
+        x_pan => $cres[2],
+        x_amt => $cres[4],
+        c_name => $tran->{chnl},
+        c_tcode => $tran->{c_tcode},
+        c_mid   => $cres->[42],
+        c_tid   => $cres->[41],
+        c_req   => '',
+        c_res   => '',
+        c_resp  => $cres->[39],
+        b_name  => $tran->{bank},
+        b_tcode => $tran->{b_tcode},
+        b_resp  => $tran->{bres}->{resp},
+        b_req   => '',
+        b_res   => '',
+    };
+
+    # 插入流水, 提交
+    $self->{zcfg}{dbo}{ilog}->($log);
+    $self->{zcfg}{dbh}->commit();
+
+    return \@cres;
+};
+

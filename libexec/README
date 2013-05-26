@@ -1,0 +1,6 @@
+plugin.pl  :  zeta加载插件
+main.pl    :  zeta主控应用
+magent.pl  :  监控节点应用
+simu.pl    :  银行模拟器
+worker.pl  :  zero工作进程
+msvr.pl    :  监控服务器

@@ -1,0 +1,134 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Carp;
+use POE;
+use POE::Wheel::ReadWrite;
+use POE::Wheel::ReadLine;
+use POE::Filter::Block;
+use POE::Filter::HTTP::Parser;
+use IO::Socket::INET;
+use Zeta::Codec::Frame qw/ascii_n binary_n/;
+use Getopt::Long;
+use Data::Dump;
+
+my $bname;
+my $rtn = GetOptions(
+    'bname|b=s' => \$bname,
+);
+unless($rtn) {
+    die "invalid options";
+}
+
+my $bcfg = do "$ENV{ZERO_HOME}/conf/bank/$bname.conf";
+confess "can not load $bname.conf error[$@]" if $@;
+
+my $bhost = $bcfg->{host};
+my $bport = $bcfg->{port};
+
+my $filter;
+my $fargs;
+if ($bcfg->{codec} =~ /ascii (\d+)/) {
+    $filter = 'POE::Filter::Block';
+    $fargs  = [ LengthCodec => ascii_n($1) ];
+}
+elsif ($bcfg->{codec} =~ /binary (\d+)/) {
+    $filter = 'POE::Filter::Block';
+    $fargs  = [ LengthCodec => binary_n($1) ];
+}
+elsif ($bcfg->{codec} =~ /http/) {
+    $filter = 'POE::Filter::HTTP::Parser',
+    $fargs  = [];
+}
+else {
+    die "no support for $bcfg->{codec}";
+}
+
+
+my $simu = do "$ENV{ZERO_HOME}/conf/bank/$bname.simu";
+die "can not dof file[$bname.simu] error[$@]" if $@;
+my %req;
+for my $file (<$ENV{ZERO_HOME}/conf/bank/$bname/*.req>) {
+    $file =~ /([^\/]+).req$/;
+    my $name = $1;
+    $req{$name} =  do $file; 
+}
+my @tcode = keys %req;
+
+# Data::Dump->dump(\%req);
+
+POE::Session->create(
+    inline_states => {
+
+        _start => sub {
+            $_[HEAP]{console} = POE::Wheel::ReadLine->new(InputEvent => 'on_select');    
+            $_[KERNEL]->yield('on_menu');
+        },
+
+        on_menu => sub {
+            $_[HEAP]{console}->put("----------------------");
+            $_[HEAP]{console}->put("请选择$bname测试交易");
+            $_[HEAP]{console}->put("----------------------");
+            $_[HEAP]{console}->put(join("\n", @tcode));
+            $_[HEAP]{console}->put("----------------------");
+            $_[HEAP]{console}->put("clear  : 清空控制台");
+            $_[HEAP]{console}->put("exit   : 退出");
+            $_[HEAP]{console}->get("请输入: ");
+        },
+
+        on_clear => sub {
+            $_[HEAP]{console}->clear();
+            $_[KERNEL]->yield('on_menu');
+        },
+
+        on_exit => sub {
+            delete $_[HEAP]{console};
+            exit 0;
+        },
+
+        on_select => sub {
+            my $input = $_[ARG0];
+            if ($input =~ /clear/) {
+                $_[KERNEL]->yield('on_clear');
+                return 1;
+            }
+            elsif($input =~ /exit/) {
+                $_[KERNEL]->yield('on_exit');
+                return 1;
+            }
+            unless( exists $req{$input}) {
+                $_[HEAP]{console}->put("交易[$input]数据不存在");
+                $_[KERNEL]->yield('on_menu');
+                return 1;
+            }
+            warn "\n";
+            $_[HEAP]{console}->put("1> test $bname.$input...");
+            $_[HEAP]{console}->put("2> connect to $bhost:$bport...");
+            my $bsock = IO::Socket::INET->new(
+                 PeerAddr => $bhost,
+                 PeerPort => $bport,
+            );
+            my $bw = POE::Wheel::ReadWrite->new(
+                Handle     => $bsock,
+                InputEvent => 'on_response',
+                Filter     => $filter->new(@$fargs),
+            );
+            $_[HEAP]{bw} = $bw;
+            my $packet = $simu->{pack}->($req{$input});
+            warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
+            $bw->put($packet);
+        },
+
+        on_response => sub {
+            warn "4> recv<<<<<<<<:\n" . $simu->{debug_res}->($simu->{unpack}->($_[ARG0]));
+            warn "5> 完成!!!\n\n";
+            $_[KERNEL]->yield('on_menu');
+        },
+    },
+);
+
+
+$poe_kernel->run();
+exit 0;
+
+

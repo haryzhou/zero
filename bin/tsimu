@@ -17,36 +17,42 @@ my $rtn = GetOptions(
     'bname|b=s' => \$bname,
 );
 unless($rtn) {
-    die "invalid options";
+    &usage();
+}
+unless($bname) {
+    &usage();
 }
 
+# 读取指定的银行的的配置: host && port && codec
 my $bcfg = do "$ENV{ZERO_HOME}/conf/bank/$bname.conf";
 confess "can not load $bname.conf error[$@]" if $@;
-
-my $bhost = $bcfg->{host};
-my $bport = $bcfg->{port};
+my $bhost  = $bcfg->{host};
+my $bport  = $bcfg->{port};
+my $bcodec = $bcfg->{codec};
 
 my $filter;
 my $fargs;
-if ($bcfg->{codec} =~ /ascii (\d+)/) {
+if ($bcodec =~ /ascii (\d+)/) {
     $filter = 'POE::Filter::Block';
     $fargs  = [ LengthCodec => ascii_n($1) ];
 }
-elsif ($bcfg->{codec} =~ /binary (\d+)/) {
+elsif ($bcodec =~ /binary (\d+)/) {
     $filter = 'POE::Filter::Block';
     $fargs  = [ LengthCodec => binary_n($1) ];
 }
-elsif ($bcfg->{codec} =~ /http/) {
+elsif ($bcodec =~ /http/) {
     $filter = 'POE::Filter::HTTP::Parser',
     $fargs  = [];
 }
 else {
-    die "no support for $bcfg->{codec}";
+    die "no support for $bcodec";
 }
 
-
+# 读取银行模拟器配置: pack/upack/debug_req/debug/res
 my $simu = do "$ENV{ZERO_HOME}/conf/bank/$bname.simu";
 die "can not dof file[$bname.simu] error[$@]" if $@;
+
+# 读取测试数据
 my %req;
 for my $file (<$ENV{ZERO_HOME}/conf/bank/$bname/*.req>) {
     $file =~ /([^\/]+).req$/;
@@ -56,7 +62,6 @@ for my $file (<$ENV{ZERO_HOME}/conf/bank/$bname/*.req>) {
 my @tcode = keys %req;
 
 # Data::Dump->dump(\%req);
-
 POE::Session->create(
     inline_states => {
 
@@ -76,16 +81,19 @@ POE::Session->create(
             $_[HEAP]{console}->get("请输入: ");
         },
 
+        # 清理屏幕命令
         on_clear => sub {
             $_[HEAP]{console}->clear();
             $_[KERNEL]->yield('on_menu');
         },
 
+        # 退出命令
         on_exit => sub {
             delete $_[HEAP]{console};
             exit 0;
         },
 
+        # 让用户选择菜单
         on_select => sub {
             my $input = $_[ARG0];
             if ($input =~ /clear/) {
@@ -96,11 +104,14 @@ POE::Session->create(
                 $_[KERNEL]->yield('on_exit');
                 return 1;
             }
+
             unless( exists $req{$input}) {
                 $_[HEAP]{console}->put("交易[$input]数据不存在");
                 $_[KERNEL]->yield('on_menu');
                 return 1;
             }
+
+            # 开始准备发起...
             warn "\n";
             $_[HEAP]{console}->put("1> test $bname.$input...");
             $_[HEAP]{console}->put("2> connect to $bhost:$bport...");
@@ -114,11 +125,14 @@ POE::Session->create(
                 Filter     => $filter->new(@$fargs),
             );
             $_[HEAP]{bw} = $bw;
+
+            # 发送
             my $packet = $simu->{pack}->($req{$input});
             warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
             $bw->put($packet);
         },
 
+        # 收到模拟器应答
         on_response => sub {
             warn "4> recv<<<<<<<<:\n" . $simu->{debug_res}->($simu->{unpack}->($_[ARG0]));
             warn "5> 完成!!!\n\n";
@@ -130,5 +144,11 @@ POE::Session->create(
 
 $poe_kernel->run();
 exit 0;
+
+sub usage {
+    die <<EOF;
+usage: tsimu -b spd|icbc|...
+EOF
+}
 
 

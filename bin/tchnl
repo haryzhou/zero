@@ -17,34 +17,25 @@ my $rtn = GetOptions(
     'cname|c=s' => \$cname,
 );
 unless($rtn) {
-    die "invalid options";
+    &usage();
 }
 
+# 读指定渠道的配置文件: host/port/codec
 my $ccfg = do "$ENV{ZERO_HOME}/conf/chnl/$cname.conf";
 confess "can not load $cname.conf error[$@]" if $@;
+my $chost  = $ccfg->{host};
+my $cport  = $ccfg->{port};
+my $ccodec = $ccfg->{codec};
 
-my $bhost = $ccfg->{host};
-my $bport = $ccfg->{port};
-
+# 过滤器
 my $filter;
 my $fargs;
-if ($ccfg->{codec} =~ /ascii (\d+)/) {
-    $filter = 'POE::Filter::Block';
-    $fargs  = [ LengthCodec => ascii_n($1) ];
-}
-elsif ($ccfg->{codec} =~ /binary (\d+)/) {
-    $filter = 'POE::Filter::Block';
-    $fargs  = [ LengthCodec => binary_n($1) ];
-}
-elsif ($ccfg->{codec} =~ /http/) {
-    $filter = 'POE::Filter::HTTP::Parser',
-    $fargs  = [];
-}
-else {
-    die "no support for $ccfg->{codec}";
-}
+if    ($ccodec =~ /ascii (\d+)/)  { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => ascii_n($1) ]; }
+elsif ($ccodec =~ /binary (\d+)/) { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => binary_n($1) ]; }
+elsif ($ccodec =~ /http/)         { $filter = 'POE::Filter::HTTP::Parser', $fargs  = []; }
+else { die "no support for $ccfg->{codec}"; }
 
-# simu
+# 渠道模拟配置: pack/unpack/debug_req/debug_res
 my $simu = do "$ENV{ZERO_HOME}/conf/chnl.simu";
 die "can not do file[chnl.simu] error[$@]" if $@;
 
@@ -103,19 +94,19 @@ POE::Session->create(
             }
             warn "\n";
             $_[HEAP]{console}->put("1> test $cname.$input...");
-            $_[HEAP]{console}->put("2> connect to $bhost:$bport...");
-            my $bsock = IO::Socket::INET->new(
-                 PeerAddr => $bhost,
-                 PeerPort => $bport,
+            $_[HEAP]{console}->put("2> connect to $chost:$cport...");
+            my $csock = IO::Socket::INET->new(
+                 PeerAddr => $chost,
+                 PeerPort => $cport,
             );
-            my $bw = POE::Wheel::ReadWrite->new(
-                Handle     => $bsock,
+            my $cw = POE::Wheel::ReadWrite->new(
+                Handle     => $csock,
                 InputEvent => 'on_response',
                 Filter     => $filter->new(@$fargs),
             );
-            $_[HEAP]{bw} = $bw;
+            $_[HEAP]{cw} = $cw;
             warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
-            $bw->put($simu->{pack}->($req{$input}));
+            $cw->put($simu->{pack}->($req{$input}));
         },
 
         on_response => sub {
@@ -129,5 +120,11 @@ POE::Session->create(
 
 $poe_kernel->run();
 exit 0;
+
+sub usage {
+   die <<EOF;
+tchnl -c cardsv
+EOF
+}
 
 

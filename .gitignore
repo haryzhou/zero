@@ -3,6 +3,7 @@
 *.tgz
 *.tar
 *.tar.gz
+*.pid
 /blib
 /Makefile
 /MYMETA.*

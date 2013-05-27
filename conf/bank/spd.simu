@@ -9,7 +9,7 @@ use JSON::XS;
 #  debug_res : 交易应答内部格式的字符串表示
 #---------------------------------------------------
 
-my $_debug = sub {
+my $debug = sub {
     my $req = shift;
     my @line;
     for (keys %$req) {

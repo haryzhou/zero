@@ -71,9 +71,9 @@ POE::Session->create(
         },
 
         on_menu => sub {
-            $_[HEAP]{console}->put("----------------------");
-            $_[HEAP]{console}->put("请选择$bname测试交易");
-            $_[HEAP]{console}->put("----------------------");
+            $_[HEAP]{console}->put("|----------------------");
+            $_[HEAP]{console}->put("|请选择$bname测试交易");
+            $_[HEAP]{console}->put("|----------------------");
             $_[HEAP]{console}->put(join("\n", @tcode));
             $_[HEAP]{console}->put("----------------------");
             $_[HEAP]{console}->put("clear  : 清空控制台");
@@ -112,13 +112,20 @@ POE::Session->create(
             }
 
             # 开始准备发起...
-            warn "\n";
+            $_[HEAP]{console}->put("\n\n**********************************");
+            $_[HEAP]{console}->put("             $input交易测试");
+            $_[HEAP]{console}->put("**********************************");
             $_[HEAP]{console}->put("1> test $bname.$input...");
             $_[HEAP]{console}->put("2> connect to $bhost:$bport...");
             my $bsock = IO::Socket::INET->new(
                  PeerAddr => $bhost,
                  PeerPort => $bport,
             );
+            unless($bsock) {
+                $_[HEAP]{console}->put("不能连接$bname\[$bhost:$bport]\n\n");
+                $_[KERNEL]->yield('on_menu');
+                return 1;
+            }
             my $bw = POE::Wheel::ReadWrite->new(
                 Handle     => $bsock,
                 InputEvent => 'on_response',
@@ -134,8 +141,8 @@ POE::Session->create(
 
         # 收到模拟器应答
         on_response => sub {
-            warn "4> recv<<<<<<<<:\n" . $simu->{debug_res}->($simu->{unpack}->($_[ARG0]));
-            warn "5> 完成!!!\n\n";
+            $_[HEAP]{console}->put("4> recv<<<<<<<<:\n" . $simu->{debug_res}->($simu->{unpack}->($_[ARG0])));
+            $_[HEAP]{console}->put( "5> 完成!!!\n\n");
             $_[KERNEL]->yield('on_menu');
         },
     },

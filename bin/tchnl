@@ -9,20 +9,10 @@ use POE::Filter::Block;
 use POE::Filter::HTTP::Parser;
 use IO::Socket::INET;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
-use Getopt::Long;
-
-my $cname;
-
-my $rtn = GetOptions(
-    'cname|c=s' => \$cname,
-);
-unless($rtn) {
-    &usage();
-}
 
 # 读指定渠道的配置文件: host/port/codec
-my $ccfg = do "$ENV{ZERO_HOME}/conf/chnl/$cname.conf";
-confess "can not load $cname.conf error[$@]" if $@;
+my $ccfg = do "$ENV{ZERO_HOME}/conf/chnl/cardsv.conf";
+confess "can not load cardsv.conf error[$@]" if $@;
 my $chost  = $ccfg->{host};
 my $cport  = $ccfg->{port};
 my $ccodec = $ccfg->{codec};
@@ -30,9 +20,9 @@ my $ccodec = $ccfg->{codec};
 # 过滤器
 my $filter;
 my $fargs;
-if    ($ccodec =~ /ascii (\d+)/)  { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => ascii_n($1) ]; }
-elsif ($ccodec =~ /binary (\d+)/) { $filter = 'POE::Filter::Block'; $fargs  = [ LengthCodec => binary_n($1) ]; }
-elsif ($ccodec =~ /http/)         { $filter = 'POE::Filter::HTTP::Parser', $fargs  = []; }
+if    ($ccodec =~ /ascii\s+(\d+)/)  { $filter = 'POE::Filter::Block'; $fargs = [ LengthCodec => ascii_n($1) ];  }
+elsif ($ccodec =~ /binary\s+(\d+)/) { $filter = 'POE::Filter::Block'; $fargs = [ LengthCodec => binary_n($1) ]; }
+elsif ($ccodec =~ /http/)           { $filter = 'POE::Filter::HTTP::Parser', $fargs  = []; }
 else { die "no support for $ccfg->{codec}"; }
 
 # 渠道模拟配置: pack/unpack/debug_req/debug_res
@@ -48,17 +38,19 @@ for my $file (<$ENV{ZERO_HOME}/conf/chnl/t/*.req>) {
 }
 my @tcode = keys %req;
 
+# session
 POE::Session->create(
     inline_states => {
-
+        # 启动
         _start => sub {
             $_[HEAP]{console} = POE::Wheel::ReadLine->new(InputEvent => 'on_select');    
             $_[KERNEL]->yield('on_menu');
         },
 
+        # 菜单
         on_menu => sub {
             $_[HEAP]{console}->put("----------------------");
-            $_[HEAP]{console}->put("请选择$cname测试交易");
+            $_[HEAP]{console}->put("请选择测试交易");
             $_[HEAP]{console}->put("----------------------");
             $_[HEAP]{console}->put(join("\n", @tcode));
             $_[HEAP]{console}->put("----------------------");
@@ -67,33 +59,42 @@ POE::Session->create(
             $_[HEAP]{console}->get("请输入: ");
         },
 
+        # 清理控制台
         on_clear => sub {
             $_[HEAP]{console}->clear();
             $_[KERNEL]->yield('on_menu');
         },
 
+        # 退出
         on_exit => sub {
             delete $_[HEAP]{console};
             exit 0;
         },
 
+        # 选择菜单
         on_select => sub {
+
             my $input = $_[ARG0];
+            # 清理控制台
             if ($input =~ /clear/) {
                 $_[KERNEL]->yield('on_clear');
                 return 1;
             }
+            # 退出
             elsif($input =~ /exit/) {
                 $_[KERNEL]->yield('on_exit');
                 return 1;
             }
+            # 
             unless( exists $req{$input}) {
                 $_[HEAP]{console}->put("交易[$input]数据不存在");
                 $_[KERNEL]->yield('on_menu');
                 return 1;
             }
-            warn "\n";
-            $_[HEAP]{console}->put("1> test $cname.$input...");
+            $_[HEAP]{console}->put("\n\n******************************");
+            $_[HEAP]{console}->put("          测试交易$input");
+            $_[HEAP]{console}->put("n******************************");
+            $_[HEAP]{console}->put("1> test $input...");
             $_[HEAP]{console}->put("2> connect to $chost:$cport...");
             my $csock = IO::Socket::INET->new(
                  PeerAddr => $chost,
@@ -116,7 +117,6 @@ POE::Session->create(
         },
     },
 );
-
 
 $poe_kernel->run();
 exit 0;

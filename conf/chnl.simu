@@ -2,11 +2,12 @@
 use Zeta::Pack::8583;
 
 my $fh = IO::File->new("<$ENV{ZERO_HOME}/lib/Zero/Chnl.pm");
+confess "can not open file Chnl.pm" unless $fh;
+
 while(<$fh>) {
     last if /__DATA__/;
 }
-
-my $pack = Zeta::Pack::8583->new( conf => $fh);
+my $pack = Zeta::Pack::8583->new(conf => $fh);
 my %tmap = (
 );
 

@@ -135,7 +135,7 @@ POE::Session->create(
 
             # 发送
             my $packet = $simu->{pack}->($req{$input});
-            warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
+            $_[HEAP]{console}->put("3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input}));
             $bw->put($packet);
         },
 

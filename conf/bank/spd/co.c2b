@@ -4,15 +4,15 @@ sub {
     my ($self, $tran) = @_;
 
     return {
-       mid   => $tran->{creq}->[42],    # 商户号
-       tid   => $tran->{creq}->[41],    # 终端号
+       mid   => $tran->{creq}[42],    # 商户号
+       tid   => $tran->{creq}[41],    # 终端号
        tcode => 'co',                   # 交易代码
 
-       pan   => $tran->{creq}->[2],
-       amt   => $tran->{creq}->[4],
+       pan   => $tran->{creq}[2],
+       amt   => $tran->{creq}[4],
 
-       tdate => $tran->{creq}->[13].$tran->{creq}->[12],         # 交易日期时间
-       ssn   => $tran->{creq}->[11],               # 交易流水号
+       tdate => $tran->{creq}[13].$tran->{creq}[12],         # 交易日期时间
+       ssn   => $tran->{creq}[11],               # 交易流水号
     };
 };
    

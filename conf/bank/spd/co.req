@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-use JSON::XS;
-
 #
 #  内部结构
 #

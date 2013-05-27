@@ -8,15 +8,15 @@ sub  {
     $self->{logger}->debug("got tran(big tran):".Data::Dump->dump($tran));
     my @cres;
     $cres[0]  = '0210';
-    $cres[2]  = $tran->{bres}->{pan};
+    $cres[2]  = $tran->{bres}{pan};
     $cres[3]  = '000000';
-    $cres[4]  = $tran->{bres}->{amt};
-    $cres[11] = $tran->{bres}->{ssn};
-    $cres[12] = substr $tran->{bres}->{tdate}, -6;
-    $cres[13] = substr $tran->{bres}->{tdate}, 0, 4;
-    $cres[39] = $tran->{bres}->{resp};
-    $cres[41] = $tran->{bres}->{tid};
-    $cres[42] = $tran->{bres}->{mid};
+    $cres[4]  = $tran->{bres}{amt};
+    $cres[11] = $tran->{bres}{ssn};
+    $cres[12] = substr $tran->{bres}{tdate}, -6;
+    $cres[13] = substr $tran->{bres}{tdate}, 0, 4;
+    $cres[39] = $tran->{bres}{resp};
+    $cres[41] = $tran->{bres}{tid};
+    $cres[42] = $tran->{bres}{mid};
     $cres[60] = '22';
     $cres[64] = 'MMMMMMMM';
 

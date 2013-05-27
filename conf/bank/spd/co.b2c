@@ -5,7 +5,6 @@
 #
 sub  {
     my ($self, $tran) = @_;
-    $self->{logger}->debug("got tran(big tran):".Data::Dump->dump($tran));
     my @cres;
     $cres[0]  = '0210';
     $cres[2]  = $tran->{bres}{pan};
@@ -43,7 +42,9 @@ sub  {
     $self->{zcfg}{dbh}->commit();
 
     # 通知后线
-    # $self->notify_backend($log);
+    # i(insert)/u(update)
+    $log->{_mode} = 'i';
+    $self->notify_backend($log);
 
     return \@cres;
 };

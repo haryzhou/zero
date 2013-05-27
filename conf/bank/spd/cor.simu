@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+
+use DateTime;
+use Data::Dump;
+sub {
+    my $req = shift;
+
+    warn "SPD-消费交易got req<<<<<<<<:\n";
+    Data::Dump->dump($req);
+    my $res = { %$req } ;
+    $res->{tcode} = $req->{tcode} . '-r';
+    $res->{resp}  = '00';
+    $res->{stlmnt_date} = DateTime->now()->ymd();
+
+    warn "SPD-消费应答snd res>>>>>>>>:\n";
+    Data::Dump->dump($res);
+    return $res;
+};
+
+
+__END__
+
+消费交易
+req:
+{
+    mid     => '123456789012345',      # 商户号
+    tid     => '12345678',             # 终端号
+    tcode   => 'cor',                   # 交易代码
+
+    pan     => '6225882100198883',     # 主账号
+    amt     => '100000',               # 交易金额
+    tx_dt   => '130523121212',         # 交易日期时间
+    ssn     => '111111',               # 交易流水号
+    org_ssn => '111110',
+};
+
+res:
+{
+    mid   => '123456789012345',      # 商户号
+    tid   => '12345678',             # 终端号
+    tcode => 'cor-r',                 # 交易代码        #-----changed-------
+
+    pan   => '6225882100198883',     # 主账号
+    amt   => '100000',               # 交易金额
+    tx_dt => '130523121212',         # 交易日期时间
+    ssn   => '111111',               # 交易流水号
+
+    stlmnt_date => '',                                 #------added-------
+    resp        => '成功',                             #------added-------
+};
+
+
+
+

@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use Zeta::Pack::8583;
+use Carp;
 
 my $fh = IO::File->new("<$ENV{ZERO_HOME}/lib/Zero/Chnl.pm");
 confess "can not open file Chnl.pm" unless $fh;

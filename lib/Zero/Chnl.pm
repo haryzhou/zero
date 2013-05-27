@@ -25,8 +25,17 @@ sub new {
 # $self->spawn($zcfg, $logger)
 #
 sub spawn {
-    my ($self, $zcfg, $logger) = @_;
-    $self->{logger} = $logger->clone('chnl-' . $self->{name} . '.log');
+    my ($self, $zcfg, $logger, $index) = @_;
+
+    my $logname;
+    if ($index =~ /\d+/) {
+        $logname = "Zchnl.$self->{name}.$index.log";
+    }
+    else {
+        $logname = "Zchnl.$self->{name}.log";
+    }
+    $self->{logger} = $logger->clone($logname);
+
     $self->{zcfg}   = $zcfg;
     POE::Session->create(
         object_states => [
@@ -108,8 +117,9 @@ sub on_chnl_packet {
 
     # 发送交易监控消息到监控队列, 如果有监控队列的话
     if ($self->{zcfg}{monq}) {
-        # my $msg = "$self->{name}|$c_tcode|$c_tkey|$c_mid|$ts_in->[0]|$ts_in->[1]";
-        # $self->{zcfg}{monq}->send($msg, $$);
+        my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
+        $self->{logger}->debug("发送交易监控消息到监控队列[$msg]");
+        $self->{zcfg}{monq}->send($msg, $$);
     }
 
     # 发送到tran模块
@@ -187,8 +197,9 @@ sub on_chnl_flush {
     # 发送监控消息
     if ($self->{zcfg}{monq}) {
         # res|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx
-        # my $msg;
-        # $self->{zcfg}{monq}->send($msg, $$); 
+        my $tran = $t->{tran};
+        my $msg = "$tran->{chnl}|$tran->{c_tcode}|$tran->{c_tkey}|$tran->{c_req}[42]|$tran->{ts_in}";
+        $self->{zcfg}{monq}->send($msg, $$); 
     }
 }
 

@@ -20,10 +20,17 @@ sub new {
 #
 sub spawn {
 
-    my ($self, $zcfg, $logger) = @_;
+    my ($self, $zcfg, $logger, $index) = @_;
 
     # 重置日志
-    $self->{logger} = $logger->clone('Ztran.log');
+    my $logname;
+    if ($index =~ /\d+/) {
+        $logname = "Ztran.$index.log";
+    }
+    else {
+        $logname = "Ztran.log";
+    }
+    $self->{logger} = $logger->clone($logname);
 
     # 配置, 路由，控制
     $self->{zcfg}   = $zcfg;
@@ -35,7 +42,7 @@ sub spawn {
         object_states => [
             $self => {
                 on_chnl => 'on_chnl',     # 收到渠道请求
-                on_bank => 'on_bank',     # 收到银行应答
+                #on_bank => 'on_bank',     # 收到银行应答
             },
         ],
         inline_states => {
@@ -71,6 +78,7 @@ sub on_chnl {
     # 2> 获取路由信息
     my $rif = $self->{route}->route($tran);
     $self->{logger}->debug("路由到$rif->{dst}");
+    $tran->{b_tcode} = $tran->{c_tcode};
 
     # 3> 发送给目标银行POE进程
     $tran->{bank} = $rif->{dst};

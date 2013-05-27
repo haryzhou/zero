@@ -42,6 +42,10 @@ EOF
     delete $nhash->{ts_u};
     delete $nhash->{ts_c};
     delete $nhash->{tdate};
+    my @keys = keys %$nhash;
+    for (my $i = 0; $i < @keys; $i++) {
+        $nhash->{$keys[$i]} = $i;
+    }
     my %nhash = reverse %$nhash;
     my @idx = sort {int($a) <=> int($b)} keys %nhash;
     my @fld = @nhash{@idx};
@@ -50,7 +54,6 @@ EOF
 
     # 准备SQL
     my $sql_ilog     = "insert into log_txn($fldstr) values($markstr)";
-    warn $sql_ilog;
     my $sql_ulog_rev = "update log_txn set rev_flag = ? where b_tkey = ?";
     my $sql_ulog_can = "update log_txn set rev_flag = ? where b_tkey = ?";
 
@@ -61,8 +64,6 @@ EOF
             c_tcode => 'co',
         };
     my @val = (undef) x @fld;
-    Data::Dump->dump($nhash);
-    $val[$nhash->{$_} - 1] = $log->{$_} for keys %$log;
-    Data::Dump->dump(@val);
+    $val[$nhash->{$_}] = $log->{$_} for keys %$log;
     $sth_ilog->execute(@val) or die $sth_ilog->errstr;
     $dbh->commit;

@@ -15,23 +15,28 @@ BEGIN {
 }
 
 sub {
-
     # 子进程重新设置
     zkernel->zsetup();
 
     # 获取配置与日志
     my $zcfg = zkernel->zconfig();
     my $logger = zlogger;
-    Data::Dump->dump($zcfg) if DEBUG;
+    my $pindex;
+    if ($0 =~ /^(\w+)\.(\d+)$/) {
+        $pindex = $2;
+    }
+    else {
+        $pindex = '';
+    }
 
     # 启动 - 交易处理
-    $zcfg->{tran}->spawn($zcfg,$logger);
+    $zcfg->{tran}->spawn($zcfg,$logger, $pindex);
 
     # 启动 - 银行
-    $zcfg->{bank}->{$_}->spawn($zcfg, $logger) for keys %{$zcfg->{bank}};
+    $zcfg->{bank}->{$_}->spawn($zcfg, $logger, $pindex) for keys %{$zcfg->{bank}};
 
     # 启动 - 渠道
-    $zcfg->{chnl}->{$_}->spawn($zcfg, $logger) for keys %{$zcfg->{chnl}};
+    $zcfg->{chnl}->{$_}->spawn($zcfg, $logger, $pindex) for keys %{$zcfg->{chnl}};
 
     # 运行
     $poe_kernel->run();

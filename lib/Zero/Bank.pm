@@ -36,10 +36,17 @@ sub new {
 #
 sub spawn {
 
-    my ($self, $zcfg, $logger) = @_;
+    my ($self, $zcfg, $logger, $index) = @_;
 
     # 日志 + 应用配置
-    $self->{logger} = $logger->clone('bank-' . $self->{name} . '.log');
+    my $logname;
+    if ($index =~ /\d+/) {
+        $logname = "Zbank.$self->{name}.$index.log";
+    }
+    else {
+        $logname = "Zbank.$self->{name}.log";
+    }
+    $self->{logger} = $logger->clone($logname);
     $self->{zcfg}   = $zcfg;
 
     # 子进程下的初始化 : 主要是数据库操作的初始化
@@ -201,7 +208,13 @@ sub on_chnl_error {
 #
 sub notify_backend {
     my $self = shift;
-    # $self->{zcfg}{backend}->send();
+    my $log  = shift;
+    
+    # send
+    $self->{zcfg}{stomp}->send({ 
+        destination => $self->{zcfg}{backend}, 
+        body        => $self->{zcfg}{serializer}->serialize($log),
+    });
 }
 
 # 子类实现如下接口

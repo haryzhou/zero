@@ -72,12 +72,12 @@ create table log_txn (
 --alter table log_txn add primary key(id);
 
 -- 索引
-create index idx_log_txn_1 on log_txn(c_tkey);
-create index idx_log_txn_2 on log_txn(b_tkey);
-create index idx_log_txn_3 on log_txn(can_key);
-create index idx_log_txn_4 on log_txn(rev_key);
+create index idx_log_txn_1 on log_txn(c_name, c_tkey);
+create index idx_log_txn_2 on log_txn(b_name, b_tkey);
+create index idx_log_txn_3 on log_txn(c_name, can_key);
+create index idx_log_txn_4 on log_txn(c_name, rev_key);
 
 
-create sequence seq_log_txn;
+--create sequence seq_log_txn;
 
 

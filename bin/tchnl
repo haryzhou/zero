@@ -108,6 +108,7 @@ POE::Session->create(
             $_[HEAP]{cw} = $cw;
             warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
             $cw->put($simu->{pack}->($req{$input}));
+            $req{$input} =  do "$ENV{ZERO_HOME}/conf/chnl/t/$input.req";
         },
 
         on_response => sub {

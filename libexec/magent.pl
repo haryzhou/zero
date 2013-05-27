@@ -21,6 +21,16 @@ sub {
     my $logger = zlogger;
     my $monq = $zcfg->{monq};
 
+    # 不断从监控队列中读取监控消息, 发送到监控服务器上
+    my $bytes;
+    my $mtype = 0;
+    while($monq->recv(\$bytes, \$mtype)) {
+       $logger->debug_hex("recv msg <<<<<<<<:", $bytes);
+    }
+};
+
+__END__
+
     # 连接监控服务器
     my $msvr = IO::Socket::INET->new(
         PeerAddr => $zcfg->{msvr}{host},

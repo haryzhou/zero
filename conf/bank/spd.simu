@@ -19,14 +19,9 @@ my $debug = sub {
 };
 
 {
-    # 打包
-    # 解包
-    # 获取内部交易代码
-    # 内部请求debug字符串
-    # 内部应答debug字符串
-    pack   => sub { encode_json(+shift); },
-    unpack => sub { decode_json(+shift); },
-    tcode  => sub { shift->{tcode};      },
+    pack      => sub { encode_json(+shift); },
+    unpack    => sub { decode_json(+shift); },
+    tcode     => sub { shift->{tcode};      },
     debug_req => sub { $debug->(+shift); },
     debug_res => sub { $debug->(+shift); },
 };

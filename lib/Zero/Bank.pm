@@ -196,6 +196,14 @@ sub on_chnl_error {
     return 1;
 }
 
+#
+# 在后线备份交易
+#
+sub notify_backend {
+    my $self = shift;
+    # $self->{zcfg}{backend}->send();
+}
+
 # 子类实现如下接口
 sub _init  { warn "_init to be implemented by Derived class"; }   # 子类实现
 sub _setup { warn "_setup to be implemented by child process"; }  # 子进程db相关设置

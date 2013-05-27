@@ -42,6 +42,9 @@ sub  {
     $self->{zcfg}{dbo}{ilog}->($log);
     $self->{zcfg}{dbh}->commit();
 
+    # 通知后线
+    # $self->notify_backend($log);
+
     return \@cres;
 };
 

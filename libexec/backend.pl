@@ -79,7 +79,7 @@ sub {
             $sth_ulog_rev->execute(@{$block->{data}});
             $dbh->commit();
         }
-	# can
+        # can
         elsif($mode eq 'c') {
             $sth_ulog_can->execute(@{$block->{data}});
             $dbh->commit();

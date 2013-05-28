@@ -6,8 +6,8 @@ use JSON::XS;
 use Data::Dump;
 use Zeta::Run;
 
-sub _init  { warn "Zero::Bank::SPD _init called";  return shift; }
-sub _setup { warn "Zero::Bank::SPD _setup called"; return shift; }
+sub _init  { my $self = shift; $self->{logger}->debug(__PACKAGE__ . " _init called" ); return $self; }
+sub _setup { my $self = shift; $self->{logger}->debug(__PACKAGE__ . " _setup called"); return $self; }
 sub pack   { shift; return encode_json(+shift); }
 sub unpack { shift; return decode_json(+shift); }
 

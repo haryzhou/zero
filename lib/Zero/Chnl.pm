@@ -206,7 +206,7 @@ sub on_chnl_flush {
 
     # 应答时间戳
     my $ts_out = [ gettimeofday ];
-    $self->{logger}->debug("交易[] elapse[" . tv_interval($t->{tran}{ts_in}, $ts_out) . "]");
+    $self->{logger}->debug("[$t->{tran}{c_tcode}][$t->{tran}{c_tkey}] elapse[" . tv_interval($t->{tran}{ts_in}, $ts_out) . "]");
 
     # 发送监控消息
     if ($self->{zcfg}{monq}) {

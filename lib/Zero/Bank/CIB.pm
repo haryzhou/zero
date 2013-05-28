@@ -3,8 +3,8 @@ use strict;
 use warnings;
 use base qw/Zero::Bank/;
 
-sub _init  { warn "Zero::Bank::CIB _init called"; return shift; }
-sub _setup { warn "Zero::Bank::CIB _setup called"; return shift;}
+sub _init  { my $self = shift; $self->{logger}->debug(__PACKAGE__ . " _init called" ); return $self; }
+sub _setup { my $self = shift; $self->{logger}->debug(__PACKAGE__ . " _setup called"); return $self; }
 sub pack   { shift; return shift; }
 sub unpack { shift; return shift; }
 

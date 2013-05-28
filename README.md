@@ -3,13 +3,9 @@
 1、 配置文件目录
 
 conf/
-
     chnl/            : 渠道配置目录
-
         t/           : 测试目录
-
            co.req    : 测试请求数据(解包后的)
-
            co.res    : 测试应答数据(解包后的)
 
         cardsv.conf  : 渠道商cardsv的配置, 包含host/port/codec

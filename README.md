@@ -1,7 +1,7 @@
 目录说明:
 
-1、 配置文件目录 conf/
-
+1、 配置文件目录conf/
+    
     |chnl/              : 渠道配置目录
     |    cardsv.conf    : 渠道商cardsv的配置, 包含host/port/codec
     |    ryx.conf       : 渠道商ryx的配置,同cardsv

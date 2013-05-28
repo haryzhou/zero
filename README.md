@@ -5,7 +5,7 @@
     |chnl/              : 渠道配置目录
     |    cardsv.conf    : 渠道商cardsv的配置, 包含host/port/codec
     |    ryx.conf       : 渠道商ryx的配置,同cardsv
-    |    t/            : 测试目录
+    |    t/             : 测试目录
     |        |co.req    : 测试请求数据(解包后的)
     |        |co.res    : 测试应答数据(解包后的)
     |bank/              : 银行配置目录

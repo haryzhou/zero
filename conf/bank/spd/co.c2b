@@ -1,18 +1,21 @@
 #!/usr/bin/perl
 # c2b  :  渠道请求 ---> 银行请求
+use DateTime;
 sub {
     my ($self, $tran) = @_;
-
+    my $dt = DateTime->now(time_zone  => 'local');
     return {
-       mid   => $tran->{creq}[42],    # 商户号
-       tid   => $tran->{creq}[41],    # 终端号
-       tcode => 'co',                   # 交易代码
+       mid   => '543210987654321',              # 商户号
+       tid   => '87654321',                     # 终端号
+       tcode => 'co',                           # 交易代码
 
        pan   => $tran->{creq}[2],
        amt   => $tran->{creq}[4],
 
-       tdate => $tran->{creq}[13].$tran->{creq}[12],         # 交易日期时间
-       ssn   => $tran->{creq}[11],               # 交易流水号
+       tx_dt => substr($dt->ymd(''), -4).$dt->hms(''),        # 交易日期时间
+       
+       batch => '100000',
+       ssn   => '100'.sprintf("%03d", int(rand(1000))),       # 交易流水号
     };
 };
    

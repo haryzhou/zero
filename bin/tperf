@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Carp;
+use POE;
+use POE::Wheel::ReadWrite;
+use POE::Wheel::ReadLine;
+use POE::Filter::Block;
+use POE::Filter::HTTP::Parser;
+use IO::Socket::INET;
+use Zeta::Codec::Frame qw/ascii_n binary_n/;
+use Getopt::Long;
+use Time::HiRes qw/gettimeofday tv_interval/;
+
+my $interval;   # 发送间隔
+my $count;      # 发送笔数
+my $rtn = GetOptions(
+    'interval|i=s' => \$interval,
+    'count|c=i'    => \$count,
+);
+unless($rtn) {
+}
+unless($interval) {
+}
+unless($count) {
+}
+
+# 读指定渠道的配置文件: host/port/codec
+my $ccfg = do "$ENV{ZERO_HOME}/conf/chnl/cardsv.conf";
+confess "can not load cardsv.conf error[$@]" if $@;
+my $chost  = $ccfg->{host};
+my $cport  = $ccfg->{port};
+
+# 过滤器
+my $filter = 'POE::Filter::Block'; 
+my $fargs = [ LengthCodec => binary_n(2) ];
+
+# 渠道模拟配置: pack/unpack/debug_req/debug_res
+my $simu = do "$ENV{ZERO_HOME}/conf/chnl.simu";
+die "can not do file[chnl.simu] error[$@]" if $@;
+
+# 消费交易-性能测试
+my $req = do "$ENV{ZERO_HOME}/conf/chnl/t/co.req";
+
+# session
+POE::Session->create(
+    inline_states => {
+        # 启动
+        _start => sub {
+            $_[HEAP]{console} = POE::Wheel::ReadLine->new(InputEvent => 'on_select');    
+            $_[HEAP]{cnt}{send} = 0;
+            $_[HEAP]{cnt}{recv} = 0;
+            $_[HEAP]{cnt}{beg}  = [ gettimeofday ];  # 测试开始时间
+            $_[KERNEL]->yield('on_send');
+        },
+
+        # 发起器测试
+        on_send => sub {
+
+            # 连接zero
+            my $csock = IO::Socket::INET->new(
+                 PeerAddr => $chost,
+                 PeerPort => $cport,
+            );
+            my $cw = POE::Wheel::ReadWrite->new(
+                Handle     => $csock,
+                InputEvent => 'on_recv',
+                Filter     => $filter->new(@$fargs),
+            );
+            $_[HEAP]{cw}{$cw->ID} = $cw;
+            $cw->put($simu->{pack}->([@$req]));
+            $_[HEAP]{cnt}{send}++;
+
+            # 发送完毕, 到总结阶段
+            if ($_[HEAP]{cnt}{send} == $count) {
+                $_[KERNEL]->yield('on_wait');
+                return 1;
+            }
+
+            # 等会再发送
+            $_[KERNEL]->delay('on_send' => $interval);
+        },
+
+        # 收到响应
+        on_recv => sub {
+            my ($input, $id) = @_; 
+            $_[HEAP]{cnt}{recv}++;
+        },
+
+        # perl
+        on_wait => sub {
+            if( $_[HEAP]{cnt}{send} == $_[HEAP]{cnt}{recv}) {
+                $_[HEAP]{cnt}{end} = [ gettimeofday ];
+                &report($_[HEAP]{cnt});
+                exit 0;
+            }
+            if (++$_[HEAP]{wait} == 10) {
+                $_[HEAP]{cnt}{end} = [ gettimeofday ];
+                &report($_[HEAP]{cnt});
+                exit 0;
+            }
+            $_[KERNEL]->delay('on_wait' => 0.1);
+        }
+    },
+);
+
+$poe_kernel->run();
+
+exit 0;
+
+sub usage {
+   die <<EOF;
+tchnl -c cardsv
+EOF
+}
+
+sub report {
+    my $stat = shift;
+    my $elapse = tv_interval($stat->{beg}, $stat->{end});
+    my $tps    = ($stat->{recv}/$elapse) * 100;
+    print <<EOF;
+send    : $stat->{send}
+recv    : $stat->{recv}
+elapse  : $elapse
+tps(t/s): $tps/100
+EOF
+
+}
+
+
+__END__
+
+
+
+

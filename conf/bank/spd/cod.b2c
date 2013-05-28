@@ -7,8 +7,7 @@ sub  {
     my ($self, $tran) = @_;
     my @cres;
     $cres[0]  = '0210';
-    $cres[2]  = $tran->{bres}{pan};
-    $cres[3]  = '000000';
+    $cres[3]  = '200000';
     $cres[4]  = $tran->{bres}{amt};
     $cres[11] = $tran->{creq}[11];
     $cres[12] = $tran->{creq}[12];
@@ -20,13 +19,14 @@ sub  {
     $cres[42] = $tran->{creq}[42];
     $cres[60] = $tran->{creq}[60];
     $cres[64] = 'MMMMMMMM';
-
+    my $b_tkey = $tran->{bres}->{batch}.$tran->{bres}->{org};
     # 组织数据库流水
     my $log = {
         x_pan   => $cres[2],
         x_amt   => $cres[4],
         c_tkey  => $cres[37],
         b_tkey  => $tran->{bres}{ref_num},
+        can_key => substr($tran->{creq}[60], 2, 6).substr($tran->{creq}[61], 6, 6),
         c_name  => $tran->{chnl},
         c_tcode => $tran->{c_tcode},
         c_mid   => $cres->[42],
@@ -42,13 +42,22 @@ sub  {
     };
 
     # 插入流水, 提交
+    $self->{logger}->debug("插入流水:".$b_tkey);
     $self->{zcfg}{dbo}{ilog}->($log);
+    
+    $self->{zcfg}{dbo}{ulog_can}->(1, $cres[37], $b_tkey);
     $self->{zcfg}{dbh}->commit();
 
     # 通知后线
-    # i(insert)/u(update)
+    # i(insert)/r(rev)/c(can)
     $log->{_mode} = 'i';
     $self->notify_backend($log);
+    
+    my $l;
+    $l->{_mode} = 'c';
+    $l->{data} = [1, $cres[37], $b_tkey];
+    $self->notify_backend($l);
+    
 
     return \@cres;
 };

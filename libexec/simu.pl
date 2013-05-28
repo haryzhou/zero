@@ -54,7 +54,11 @@ sub {
             my $packet = shift;
             my $req    = $zcfg->{simu}{$bname}{main}{unpack}->($packet);   # 解包
             my $tcode  = $zcfg->{simu}{$bname}{main}{tcode}->($req);       # 内部交易代码
-            my $res    = $zcfg->{simu}{$bname}{proc}{$tcode}->($req);      # 
+            $logger->debug("$bname收到请求$tcode<<<<<<<<:\n", $zcfg->{simu}{$bname}{main}{debug_req}->($req));
+
+            my $res = $zcfg->{simu}{$bname}{proc}{$tcode}->($req);      # 
+            $logger->debug("$bname发送应答$tcode>>>>>>>>:\n", $zcfg->{simu}{$bname}{main}{debug_res}->($res));
+
             return $zcfg->{simu}{$bname}{main}{pack}->($res);              #
         };
 

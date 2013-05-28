@@ -6,9 +6,8 @@
 sub  {
     my ($self, $tran) = @_;
     my @cres;
-    $cres[0]  = '0210';
-    $cres[2]  = $tran->{bres}{pan};
-    $cres[3]  = '000000';
+    $cres[0]  = '0410';
+    $cres[3]  = '200000';
     $cres[4]  = $tran->{bres}{amt};
     $cres[11] = $tran->{creq}[11];
     $cres[12] = $tran->{creq}[12];
@@ -42,13 +41,31 @@ sub  {
     };
 
     # 插入流水, 提交
+    my $b_tkey = $tran->{bres}->{batch}.$tran->{bres}->{org};
+    $self->{logger}->debug("插入流水:".$b_tkey);
     $self->{zcfg}{dbo}{ilog}->($log);
+    
+    my $log_co = $self->{zcfg}{dbo}{slog}->(($tran->{chnl}, $tran->{log_cod}->{can_key}));
+    
+    $self->{zcfg}{dbo}{ulog_rev}->($cres[37], $b_tkey);
+    $self->{zcfg}{dbo}{ulog_can}->('', '', $log_co->{b_tkey});
     $self->{zcfg}{dbh}->commit();
 
     # 通知后线
-    # i(insert)/u(update)
+    # i(insert)/r(rev)/c(can)
     $log->{_mode} = 'i';
     $self->notify_backend($log);
+    
+    my $l;
+    $l->{_mode} = 'r';
+    $l->{data} = [$cres[37], $b_tkey];
+    $self->notify_backend($l);
+    
+    my $lo;
+    $lo->{_mode} = 'c';
+    $lo->{data} = ['', '', $log_co->{b_tkey}];
+    $self->notify_backend($lo);
+    
 
     return \@cres;
 };

@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+# c2b  :  渠道请求 ---> 银行请求
+use DateTime;
+sub {
+    my ($self, $tran) = @_;
+    my $dt = DateTime->now(time_zone  => 'local');
+    my $log_org = $self->{zcfg}{dbo}{slog}->(($tran->{chnl}, substr($tran->{creq}[60], 2, 6).substr($tran->{creq}[61], 6, 6)));
+    $tran->{log_cod} = $log_org;
+    return {
+       mid       => '543210987654321',    # 商户号
+       tid       => '87654321',    # 终端号
+       tcode     => 'codr',                # 交易代码
+
+       amt       => $tran->{creq}[4],
+
+       tx_dt     => substr($dt->ymd(''), -4).$dt->hms(''),        # 交易日期时间
+       
+       batch => '100000',
+       ssn       => '100'.sprintf("%03d", int(rand(1000))),       # 交易流水号
+        
+       # 原始交易信息
+       org       => substr($log_org->{b_tkey}, 6, 6),
+    };
+};
+   

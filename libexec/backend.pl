@@ -1,13 +1,30 @@
 #!/usr/bin/perl
-
 use Zeta::Run;
 use Zeta::Serializer::JSON;
 use Net::Stomp;
+use Time::HiRes qw/sleep/;
 use Carp;
 
 sub {
     my $logger = zlogger;
-    my $stomp  = zkernel->zstomp();
+    my $stomp;
+    my $cnt = 0;
+    while(1) {
+        eval {
+            $stomp  = zkernel->zstomp();
+        };
+        if ($@) {
+            $logger->error("can not connect to stomp");
+            if ($cnt++ == 10) {
+                exit 0;
+            }
+            sleep 0.5;
+            next;
+        }
+        last;
+    }
+    $logger->debug("stomp connected");
+
     my $dbh    = zkernel->dbh_bke();
     my $zcfg   = zkernel->zconfig();
     my $ser    = $zcfg->{serializer};
@@ -35,11 +52,14 @@ sub {
 
     # 准备SQL
     my $sql_ilog  = "insert into log_txn($fldstr) values($markstr)";
-    my $sql_ulog  = "update log_txn($fldstr) set $ustr";
+    my $sql_ulog_rev = "update log_txn set rev_flag = 1, rev_key = ? where b_tkey = ?";
+    my $sql_ulog_can = "update log_txn set can_flag = ?, can_key = ? where b_tkey = ?";
 
     #prepare statement 
     my $ilog = $dbh->prepare($sql_ilog);
-    my $ulog = $dbh->prepare($sql_ulog);
+    my $sth_ulog_rev = $dbh->prepare($sql_ulog_rev);
+    my $sth_ulog_can = $dbh->prepare($sql_ulog_can);
+
 
     while (1) {
     	my $frame = $stomp->receive_frame;
@@ -54,11 +74,14 @@ sub {
             $ilog->execute(@val);
             $dbh->commit();
         }
-        # update
-        elsif($mode eq 'u') {
-            my @val = (undef) x @fld;
-            $val[$nhash->{$_}] = $block->{$_} for (keys %$block);
-            $ulog->execute(@val);
+        # rev
+        elsif($mode eq 'r') {
+            $sth_ulog_rev->execute(@{$block->{data}});
+            $dbh->commit();
+        }
+	# can
+        elsif($mode eq 'c') {
+            $sth_ulog_can->execute(@{$block->{data}});
             $dbh->commit();
         }
     	$stomp->ack({frame => $frame});

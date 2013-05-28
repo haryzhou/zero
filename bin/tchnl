@@ -106,9 +106,14 @@ POE::Session->create(
                 Filter     => $filter->new(@$fargs),
             );
             $_[HEAP]{cw} = $cw;
+            if ($input =~ /(r|d)$/) {
+                print "输入关联交易流水号:\n";
+                my $org_ssn = <>;
+                $org_ssn = substr $org_ssn, 0, 6;
+                $req{$input}->[61] =~ s/xxxxxx/$org_ssn/;
+            }
             warn "3> send>>>>>>>>:\n" . $simu->{debug_req}->($req{$input});
-            $cw->put($simu->{pack}->($req{$input}));
-            $req{$input} =  do "$ENV{ZERO_HOME}/conf/chnl/t/$input.req";
+            $cw->put($simu->{pack}->([@{$req{$input}}]));
         },
 
         on_response => sub {

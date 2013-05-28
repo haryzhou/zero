@@ -8,6 +8,19 @@ use POE::Filter::Block;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
 
 my %tmap = (
+    '0200.00.22'      => 'co',
+    '0400.00.22'      => 'cor',
+    '0200.20.23'      => 'cod',
+    '0400.20.23'      => 'codr',
+    #'0110.03.10'      => 'pa',
+    #'0410.03.10'      => 'par',
+    #'0110.20.11'      => 'pad',
+    #'0410.20.11'      => 'padr', # 0410.20.11
+    #'0210.00.20'      => 'pac',
+    #'0410.00.20'      => 'pacr',
+    #'0210.20.21'      => 'pacd',
+    #'0410.20.21'      => 'pacdr',
+    '0810.00'         => 'si',
 );
 
 #
@@ -104,6 +117,7 @@ sub on_chnl_packet {
 
     # 设置内部交易代码(creq组匹配串)
     my $tstr;
+    $tstr = $creq->[0].'.'.substr($creq->[3], 0, 2).'.'.substr($creq->[60], 0, 2);
 
     # 交易记录
     my $tran = {
@@ -117,9 +131,9 @@ sub on_chnl_packet {
 
     # 发送交易监控消息到监控队列, 如果有监控队列的话
     if ($self->{zcfg}{monq}) {
-        my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
-        $self->{logger}->debug("发送交易监控消息到监控队列[$msg]");
-        $self->{zcfg}{monq}->send($msg, $$);
+        # my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
+        # $self->{logger}->debug("发送交易监控消息到监控队列[$msg]");
+        # $self->{zcfg}{monq}->send($msg, $$);
     }
 
     # 发送到tran模块
@@ -198,7 +212,7 @@ sub on_chnl_flush {
     if ($self->{zcfg}{monq}) {
         # res|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx
         my $tran = $t->{tran};
-        my $msg = "$tran->{chnl}|$tran->{c_tcode}|$tran->{c_tkey}|$tran->{c_req}[42]|$tran->{ts_in}";
+        my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
         $self->{zcfg}{monq}->send($msg, $$); 
     }
 }
@@ -221,13 +235,13 @@ sub on_chnl_flush {
 sub on_chnl_response {
     my $self = $_[OBJECT];
     my $tran = $_[ARG0];
-    
+    $self->{logger}->debug("发送渠道数据>>>>>>>>:".Data::Dump->dump($tran));
     # 打包渠道应答
     my $packet = $self->pack($tran->{cres});
     
     # 发送
     $self->{logger}->debug_hex("发送渠道数据>>>>>>>>:", $packet);
-    $_[HEAP]{chnl}{$tran->{cid}}->{wheel}->put($packet);
+    $_[HEAP]{chnl}{$tran->{cid}}{wheel}->put($packet);
 }
 
 #
@@ -264,6 +278,7 @@ __DATA__
   12    n      6      fix       ascii    bcd       受卡方所在地时间
   13    n      4      fix       ascii    bcd       受卡方所在地日期
   14    n      4      fix       ascii    bcd       卡有效期
+  18    n      8      fix       ascii    bcd       银行代码
   15    n      4      fix       ascii    bcd       清算日期
   22    n      3      fix       ascii    bcdl      服务点输入方式码
   23    n      3      fix       ascii    bcd       卡序列号

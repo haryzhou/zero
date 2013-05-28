@@ -26,6 +26,7 @@ sub {
     my $mtype = 0;
     while($monq->recv(\$bytes, \$mtype)) {
        $logger->debug_hex("recv msg <<<<<<<<:", $bytes);
+       $mtype = 0;
     }
 };
 

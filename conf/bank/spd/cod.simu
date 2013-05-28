@@ -9,6 +9,7 @@ sub {
     Data::Dump->dump($req);
     my $res = { %$req } ;
     $res->{tcode} = $req->{tcode} . '-r';
+    $res->{ref_num} = $req->{batch}.$req->{ssn};
     $res->{resp}  = '00';
     $res->{stlmnt_date} = DateTime->now()->ymd();
 

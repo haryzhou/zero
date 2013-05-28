@@ -17,10 +17,10 @@ sub new {
 #
 sub route {
     my ($self, $tran) = @_;
+   
+    # 特殊 
+    $tran->{b_tcode} = $tran->{c_tcode};
 
-    $tran->{c_tcode} = 'co';
-
-    $tran->{b_tcode} = 'co';
     # 测试路由
     return {
         dst   => 'spd',

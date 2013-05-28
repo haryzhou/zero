@@ -1,10 +1,9 @@
 export ZETA_HOME=$HOME/workspace/zeta
-export ZARK_HOME=$HOME/workspace/zark
 export ZERO_HOME=$HOME/workspace/zero
-export PERL5LIB=$ZETA_HOME/lib:$ZARK_HOME/lib:$ZERO_HOME/lib
+export PERL5LIB=$ZETA_HOME/lib:$ZERO_HOME/lib
 export PLUGIN_PATH=$ZERO_HOME/plugin
 export PATH=$ZERO_HOME/bin:$ZERO_HOME/sbin:$ZETA_HOME/bin:$PATH
-export ZAPP_DEBUG=1;
+export ZERO_ID=0;
 
 export DB_NAME=zdb_dev
 export DB_USER=ypinst

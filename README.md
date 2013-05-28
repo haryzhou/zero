@@ -3,9 +3,9 @@
 1、 配置文件目录 conf/
 
     |chnl/                : 渠道配置目录
-    |    |/               : 测试目录
-    |    |  |co.req       : 测试请求数据(解包后的)
-    |    |  |co.res       : 测试应答数据(解包后的)
+    |    |t/              : 测试目录
+    |    |   |co.req      : 测试请求数据(解包后的)
+    |    |   |co.res      : 测试应答数据(解包后的)
     |    |cardsv.conf     : 渠道商cardsv的配置, 包含host/port/codec
     |    |ryx.conf        : 渠道商ryx的配置,同cardsv
     |bank/                : 银行配置目录
@@ -39,7 +39,17 @@
 
 4、 etc目录
 
+    profile.mak  : 开发测试环境变量
+    
 5、 log目录
+    
+    Zsimu.log              : 模拟器日志
+    Zworker.N.log          : 第N个工作进程日志
+    Zchnl.CHNL_NAME.N.log  : 第N个工作进程的某个渠道日志
+    Zbank.BANK_NAME.N.log  : 第N个工作进程的某个银行日志
+    Zbackend.log           : 测试用-后线流水同步进程
+    Zmagent.log            : 监控节点进程日志
+    Zstomp.log             : 测试用-可靠消息队列
 
 6、 t目录
 

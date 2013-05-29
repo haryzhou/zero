@@ -39,14 +39,16 @@ sub spawn {
     my ($self, $zcfg, $logger, $index) = @_;
 
     # 日志 + 应用配置
-    my $logname;
-    if ($index =~ /\d+/) {
-        $logname = "Zbank.$self->{name}.$index.log";
-    }
-    else {
-        $logname = "Zbank.$self->{name}.log";
-    }
-    $self->{logger} = $logger->clone($logname);
+    # my $logname;
+    # if ($index =~ /\d+/) {
+    #     $logname = "Zbank.$self->{name}.$index.log";
+    # }
+    # else {
+    #     $logname = "Zbank.$self->{name}.log";
+    # }
+    # $self->{logger} = $logger->clone($logname);
+
+    $self->{logger} = $logger;
     $self->{zcfg}   = $zcfg;
 
     # 子进程下的初始化 : 主要是数据库操作的初始化
@@ -78,10 +80,10 @@ sub on_tran {
     my $self = $_[OBJECT];
     my $tran = $_[ARG0];
     
-    # $self->{logger}->debug("收到交易:\n" . Data::Dump->dump($tran));
+    # $self->{logger}->debug("[$self->{name}] 收到交易:\n" . Data::Dump->dump($tran));
    
     # 连接银行
-    $self->{logger}->debug("连接银行[$self->{host}:$self->{port}]...");
+    $self->{logger}->debug("[$self->{name}] 连接银行[$self->{host}:$self->{port}]...");
     my $bsock = IO::Socket::INET->new(
        PeerAddr => $self->{host},
        PeerPort => $self->{port},
@@ -107,7 +109,7 @@ sub on_tran {
 
     # 调用定制处理c2b: 渠道请求-->银行请求
     my $breq = $self->{proc}{$tran->{b_tcode}}{c2b}->($self, $tran);
-    $self->{logger}->debug("breq:".Data::Dump->dump($breq));
+    $self->{logger}->debug("[$self->{name}] breq:".Data::Dump->dump($breq));
     $tran->{breq} = $breq;
     $tran->{bid}  = $wheel->ID();
 
@@ -121,7 +123,7 @@ sub on_tran {
     my $packet = $self->pack($breq);
    
     # 发送给银行
-    $self->{logger}->debug_hex("发送银行报文>>>>>>>>:", $packet); 
+    $self->{logger}->debug_hex("[$self->{name}] 发送银行报文>>>>>>>>:", $packet); 
     $wheel->put($packet);
 }
 
@@ -135,7 +137,7 @@ sub on_bank_packet {
     my $bid    = $_[ARG1];
 
     # 记录银行应答报文
-    $self->{logger}->debug_hex("收到银行报文<<<<<<<<:",  $packet);
+    $self->{logger}->debug_hex("[$self->{name}] 收到银行报文<<<<<<<<:",  $packet);
 
     # 删除堆上:  通道+交易
     my $t = delete $_[HEAP]{bank}{$bid};
@@ -165,16 +167,16 @@ sub on_bank_error {
 
     my $self = $_[OBJECT];
     my $id   = $_[ARG3];
-    $self->{logger}->debug("on_bank_error called[$id], 释放资源, 通知渠道端");
+    $self->{logger}->debug("[$self->{name}] on_bank_error called[$id], 释放资源, 通知渠道端");
     
     # 释放银行端资源
     my @r = keys %{$_[HEAP]{bank}};
-    $self->{logger}->debug("释放[$id]资源[前]的堆栈情况:[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[前]的堆栈情况:[@r]");
     
     my $t = delete $_[HEAP]{bank}->{$id};
     
     @r = keys %{$_[HEAP]{bank}};
-    $self->{logger}->debug("释放[$id]资源[后]的堆栈情况:[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[后]的堆栈情况:[@r]");
 
     # 通知渠道端释放资源
     $_[KERNEL]->post($t->{tran}{chnl}, 'on_bank_error', $t->{tran}{cid});
@@ -189,16 +191,16 @@ sub on_chnl_error {
 
     my $self = $_[OBJECT];
     my $id   = $_[ARG0];
-    $self->{logger}->debug("on_chnl_error called[$id], 释放资源");
+    $self->{logger}->debug("[$self->{name}] on_chnl_error called[$id], 释放资源");
     
     # 释放银行端资源
     my @r = keys %{$_[HEAP]{bank}};
-    $self->{logger}->debug("释放[$id]资源[前]的堆栈情况:[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[前]的堆栈情况:[@r]");
     
     my $t = delete $_[HEAP]{bank}{$id};
     
     @r = keys %{$_[HEAP]{bank}};
-    $self->{logger}->debug("释放[$id]资源[后]的堆栈情况:[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[后]的堆栈情况:[@r]");
     
     return 1;
 }

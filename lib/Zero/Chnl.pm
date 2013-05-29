@@ -40,16 +40,19 @@ sub new {
 sub spawn {
     my ($self, $zcfg, $logger, $index) = @_;
 
-    my $logname;
-    if ($index =~ /\d+/) {
-        $logname = "Zchnl.$self->{name}.$index.log";
-    }
-    else {
-        $logname = "Zchnl.$self->{name}.log";
-    }
-    $self->{logger} = $logger->clone($logname);
+#    my $logname;
+#    if ($index =~ /\d+/) {
+#        $logname = "Zchnl.$self->{name}.$index.log";
+#    }
+#    else {
+#        $logname = "Zchnl.$self->{name}.log";
+#    }
 
-    $self->{zcfg}   = $zcfg;
+    #$self->{logger} = $logger->clone($logname);
+    $self->{logger} = $logger;
+    $self->{zcfg}  = $zcfg;
+    $self->{index} = $index;
+
     POE::Session->create(
         object_states => [
             $self => { 
@@ -64,7 +67,7 @@ sub spawn {
         ],
         inline_states => {
             _start => sub {
-                $self->{logger}->debug("chnl $self->{name} started");
+                $self->{logger}->debug("[$self->{name}] started");
                 $_[KERNEL]->alias_set($self->{name});    
                 $_[HEAP]{la} = POE::Wheel::ListenAccept->new(
                     Handle      => $self->{lfd},
@@ -98,7 +101,7 @@ sub on_accept {
 #
 sub on_la_error {
     my $self = $_[OBJECT];
-    $self->{logger}->error("accept error");
+    $self->{logger}->error("[$self->{name}] accept error");
 }
 
 #
@@ -110,7 +113,7 @@ sub on_chnl_packet {
     my $packet = $_[ARG0];
     my $cid    = $_[ARG1];
 
-    $self->{logger}->debug_hex("收到渠道数据<<<<<<<<:", $packet);
+    $self->{logger}->debug_hex("[$self->{name}] 收到渠道数据<<<<<<<<:", $packet);
 
     # 渠道请求报文 - 解包
     my $creq = $self->unpack($packet);
@@ -147,26 +150,26 @@ sub on_chnl_error {
     my $self = $_[OBJECT];
     my $id   = $_[ARG3];
     
-    $self->{logger}->debug("on_chnl_error called[$id], 释放资源");
+    $self->{logger}->debug("[$self->{name}] on_chnl_error called[$id], 释放资源");
     
     # 释放资源
     my @r = keys %{$_[HEAP]{chnl}};
-    $self->{logger}->debug("释放[$id]资源[前]的堆栈情况[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[前]的堆栈情况[@r]");
     
     my $t = delete $_[HEAP]{chnl}{$id};
     
     @r = keys %{$_[HEAP]{chnl}};
-    $self->{logger}->debug("释放[$id]资源[后]的堆栈情况[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[后]的堆栈情况[@r]");
 
     # 如果在银行响应后, 渠道端断开
     if ($t->{tran}{cres}) {
         # 直接delete掉
     }
-    $self->{logger}->debug("tran[bank]:".Data::Dump->dump($t->{tran}));
+    $self->{logger}->debug("[$self->{name}] tran[bank]:".Data::Dump->dump($t->{tran}));
 
     # 通知相应的银行端释放资源
     if ($t->{tran}{bid}) {
-        $self->{logger}->debug("on_chnl_error called[$id], 通知银行端");
+        $self->{logger}->debug("[$self->{name}] on_chnl_error called[$id], 通知银行端");
         $_[KERNEL]->post($t->{tran}{bank}, 'on_chnl_error', $t->{tran}{bid} );
     }
 
@@ -181,15 +184,15 @@ sub on_bank_error {
     my $self = $_[OBJECT];
     my $id   = $_[ARG0];
     
-    $self->{logger}->error("on_bank_error called, 释放资源");
+    $self->{logger}->error("[$self->{name}] on_bank_error called, 释放资源");
     
     my @r = keys %{$_[HEAP]{chnl}};
-    $self->{logger}->debug("释放[$id]资源[前]的堆栈情况[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[前]的堆栈情况[@r]");
     
     delete $_[HEAP]{chnl}{$id};
     
     @r = keys %{$_[HEAP]{chnl}};
-    $self->{logger}->debug("释放[$id]资源[后]的堆栈情况[@r]");
+    $self->{logger}->debug("[$self->{name}] 释放[$id]资源[后]的堆栈情况[@r]");
     
     return 1;
 }
@@ -206,7 +209,7 @@ sub on_chnl_flush {
 
     # 应答时间戳
     my $ts_out = [ gettimeofday ];
-    $self->{logger}->debug("[$t->{tran}{c_tcode}][$t->{tran}{c_tkey}] elapse[" . tv_interval($t->{tran}{ts_in}, $ts_out) . "]");
+    $self->{logger}->debug("[$self->{name}] [$t->{tran}{c_tcode}][$t->{tran}{c_tkey}] elapse[" . tv_interval($t->{tran}{ts_in}, $ts_out) . "]");
 
     # 发送监控消息
     if ($self->{zcfg}{monq}) {
@@ -235,12 +238,12 @@ sub on_chnl_flush {
 sub on_chnl_response {
     my $self = $_[OBJECT];
     my $tran = $_[ARG0];
-    $self->{logger}->debug("发送渠道数据>>>>>>>>:".Data::Dump->dump($tran));
+    $self->{logger}->debug("[$self->{name}] 发送渠道数据>>>>>>>>:".Data::Dump->dump($tran));
     # 打包渠道应答
     my $packet = $self->pack($tran->{cres});
     
     # 发送
-    $self->{logger}->debug_hex("发送渠道数据>>>>>>>>:", $packet);
+    $self->{logger}->debug_hex("[$self->{name}] 发送渠道数据>>>>>>>>:", $packet);
     $_[HEAP]{chnl}{$tran->{cid}}{wheel}->put($packet);
 }
 

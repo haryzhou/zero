@@ -4,3 +4,4 @@ magent.pl  :  监控节点应用
 simu.pl    :  银行模拟器
 worker.pl  :  zero工作进程
 msvr.pl    :  监控服务器
+backend.pl :  后线数据库同步

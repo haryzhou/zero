@@ -20,7 +20,7 @@ my %tmap = (
     #'0410.00.20'      => 'pacr',
     #'0210.20.21'      => 'pacd',
     #'0410.20.21'      => 'pacdr',
-    '0810.00'         => 'si',
+    #'0810.00'         => 'si',
 );
 
 #
@@ -131,12 +131,12 @@ sub on_chnl_packet {
         ts_in   => [gettimeofday],
     };
     $_[HEAP]{chnl}{$cid}{tran} = $tran;
-
+    $self->{logger}->debug("self is :".Data::Dump->dump($self));
     # 发送交易监控消息到监控队列, 如果有监控队列的话
     if ($self->{zcfg}{monq}) {
-        # my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
+        my $msg = join '|', ('zero', $ENV{ZERO_ID}, 1, $tran->{chnl}, $tran->{c_tcode}, $tran->{creq}[4], $tran->{creq}[11], $tran->{creq}[41], $tran->{creq}[42], @{$tran->{ts_in}});
         # $self->{logger}->debug("发送交易监控消息到监控队列[$msg]");
-        # $self->{zcfg}{monq}->send($msg, $$);
+        $self->{zcfg}{monq}->send($msg, $$);
     }
 
     # 发送到tran模块
@@ -213,9 +213,8 @@ sub on_chnl_flush {
 
     # 发送监控消息
     if ($self->{zcfg}{monq}) {
-        # res|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx
         my $tran = $t->{tran};
-        my $msg = "$tran->{chnl}\|$tran->{c_tcode}\|$tran->{c_tkey}\|$tran->{c_req}[42]\|$tran->{ts_in}";
+        my $msg = join '|', ('zero', $ENV{ZERO_ID}, 2, $tran->{chnl}, $tran->{c_tcode}, $tran->{cres}[4], $tran->{cres}[11], $tran->{cres}[41], $tran->{cres}[42], @$ts_out);
         $self->{zcfg}{monq}->send($msg, $$); 
     }
 }

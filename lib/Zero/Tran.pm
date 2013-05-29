@@ -83,7 +83,7 @@ sub on_chnl {
 
     # 3> 发送给目标银行POE进程
     $tran->{bank} = $rif->{dst};
-    $_[KERNEL]->post($rif->{dst}, 'on_tran', $tran);
+    $_[KERNEL]->post($rif->{dst}, 'on_tran', $tran, 0);
 
     return 1;
 }

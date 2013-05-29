@@ -62,6 +62,11 @@ POE::Session->create(
                  PeerAddr => $chost,
                  PeerPort => $cport,
             );
+            unless($csock) {
+                 warn "connnect[$chost:$cport] failed error[$!]";
+                 $_[KERNEL]->delay('on_send' => 0.01);
+                 return;
+            }
             my $cw = POE::Wheel::ReadWrite->new(
                 Handle     => $csock,
                 InputEvent => 'on_recv',
@@ -83,8 +88,10 @@ POE::Session->create(
 
         # 收到响应
         on_recv => sub {
-            my ($input, $id) = @_; 
-            $_[HEAP]{cnt}{recv}++;
+            my ($input, $id) = @_;
+            if (++$_[HEAP]{cnt}{recv} % 100 == 0 ) {
+                &report($_[HEAP]{cnt});
+            }
         },
 
         # perl
@@ -118,11 +125,12 @@ sub report {
     my $stat = shift;
     my $elapse = tv_interval($stat->{beg}, $stat->{end});
     my $tps    = ($stat->{recv}/$elapse) * 100;
-    print <<EOF;
+    warn <<EOF;
+-----------------------------------
 send    : $stat->{send}
 recv    : $stat->{recv}
 elapse  : $elapse
-tps(t/s): $tps/100
+tps(t/s): $tps
 EOF
 
 }

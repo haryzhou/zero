@@ -6,6 +6,7 @@ use DBI;
 use Carp;
 use POE;
 use Zeta::POE::TCPD;
+use Zeta::POE::Sink;
 
 use constant{
     DEBUG => $ENV{ZERO_DEBUG} || 0,
@@ -25,28 +26,39 @@ sub {
     my $zcfg = zkernel->zconfig();
     my $logger = zlogger;
 
+    my $pindex;
+    if ($0 =~ /^(\w+)\.(\d+)$/) {
+        $pindex = $2;
+    }
+    else {
+        $pindex = '';
+    }
+
     my %txn;
     my $cb = sub {
         my $packet = shift;
-        $packet =~ s/^(\w+)://;
-        my $type = $1;
- 
+        
         # 日志监控
-        if ($type =~ /log/ ) {
+        if( $packet =~ /\[(.+)\|(.+)\|(.+)\]/) {
+            $logger->debug("recv[log]<<<<<<<<\n".$packet);
         }
-        # 交易请求
-        elsif( $type =~/req/ ) {
-            
-        }
-        # 交易应答
-        elsif( $type =~/res/ ) {
+        # 
+        else{
+            # 将采集信息发送给不同的分析器
+            my ($app, $node, $type, @info) = split '\|', $packet;
+            $logger->debug("got [$app][$node][$type]: $packet");
+            $logger->debug("post to session[$app.on_message]...");
+            $poe_kernel->post($app, 'on_message', $node, $type, \@info);
         }
     };
     Zeta::POE::Sink->spawn(
-        port     => $zcfg->{msvr}}{port},
+        port     => $zcfg->{msvr}{port},
         callback => $cb,
         codec    => $zcfg->{msvr}{codec},
     );
+
+    # 启动所有分析器 
+    $zcfg->{moni}{$_}->spawn($zcfg, $logger, $pindex) for keys %{$zcfg->{moni}};
 
     # 运行
     $poe_kernel->run();

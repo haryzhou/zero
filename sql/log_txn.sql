@@ -1,8 +1,7 @@
 drop table log_txn;
-drop sequence seq_log_txn; 
+
 create table log_txn (
 
-   --id          bigint not null,
    tdate       date default current date,
 
 -------------- 通用信息字段--------------
@@ -69,15 +68,9 @@ create table log_txn (
    ts_u  timestamp
 
 ) in tbs_dat index in tbs_idx;
---alter table log_txn add primary key(id);
 
 -- 索引
 create index idx_log_txn_1 on log_txn(c_name, c_tkey);
 create index idx_log_txn_2 on log_txn(b_name, b_tkey);
 create index idx_log_txn_3 on log_txn(c_name, can_key);
 create index idx_log_txn_4 on log_txn(c_name, rev_key);
-
-
---create sequence seq_log_txn;
-
-

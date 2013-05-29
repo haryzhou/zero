@@ -6,6 +6,10 @@ use POE::Wheel::ReadWrite;
 use POE::Filter::Block;
 use POE::Filter::HTTP::Parser;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
+use constant {
+    MAX_TRY_COUNT => 5,
+    TRY_INTERVAL  => 0.01,
+};
 
 #--------------------------------------------
 #  name   => '银行名称',
@@ -79,7 +83,7 @@ sub on_tran {
 
     my $self = $_[OBJECT];
     my $tran = $_[ARG0];
-    
+    my $try  = $_[ARG1];
     # $self->{logger}->debug("[$self->{name}] 收到交易:\n" . Data::Dump->dump($tran));
    
     # 连接银行
@@ -89,7 +93,13 @@ sub on_tran {
        PeerPort => $self->{port},
        Proto    => 'tcp',
     );
-
+    unless ($bsock) {
+        $self->{logger}->warn("[$self->{name}] 连接银行[$self->{host}:$self->{port}]失败");
+        if (++$try == MAX_TRY_COUNT) {
+            return 1;
+        }
+        $_[KERNEL]->delay('on_tran' => TRY_INTERVAL, $try);
+    }
     # codec-->过滤器配置
     my $filter;
     my $fargs;
@@ -216,6 +226,7 @@ sub notify_backend {
     $self->{zcfg}{stomp}->send({ 
         destination => $self->{zcfg}{backend}, 
         body        => $self->{zcfg}{serializer}->serialize($log),
+        persistent => 'true',
     });
 }
 

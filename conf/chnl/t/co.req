@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 use DateTime;
-my $dt = DateTime->now(time_zone  => 'local');
+
+my $dt = DateTime->now(time_zone => 'local');
+
 my $ssn = '800'.sprintf("%03d", int(rand(1000)));
 my @swt;
 $swt[0]  = '0200';
@@ -18,6 +20,5 @@ $swt[42] = '825550000009999'; # 825550000009999
 $swt[60] = '22000001';
 $swt[64] = 'MMMMMMMM';
 \@swt;
-
 
 __END__

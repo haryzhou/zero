@@ -1,5 +1,7 @@
 cd $ZERO_HOME/sql;
-db2 connect to zdb user ypinst using ypinst;
+db2 connect to $DB_NAME user $DB_USER using $DB_PASS;
+db2 set current schema $DB_SCHEMA;
 db2 -tvf log_txn.sql;
-db2 set current schema backend;
+db2 connect to $DB_NAME_BKE user $DB_USER_BKE using $DB_PASS_BKE;
+db2 set current schema $DB_SCHEMA_BKE;
 db2 -tvf log_txn.sql;

@@ -243,6 +243,11 @@ sub on_chnl_response {
     
     # 发送
     $self->{logger}->debug_hex("[$self->{name}] 发送渠道数据>>>>>>>>:", $packet);
+    unless ($_[HEAP]{chnl}{$tran->{cid}}{wheel}) {
+        $self->{logger}->warn("");
+        return 1;
+    }
+    
     $_[HEAP]{chnl}{$tran->{cid}}{wheel}->put($packet);
 }
 

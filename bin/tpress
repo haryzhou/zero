@@ -1,0 +1,13 @@
+#!/bin/bash
+
+n=$1
+cd $ZERO_HOME/log
+restart
+
+sleep 1;
+echo "开始启动测试...";
+for i in `seq 0 $n`; do 
+    echo "启动: tperf -i 0.001 -c 100000 > tperf.$i.log 2>&1 &";
+    tperf -i 0.001 -c 100000 > tperf.$i.log 2>&1 &
+done
+

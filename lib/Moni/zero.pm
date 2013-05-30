@@ -24,8 +24,6 @@ sub on_req {
 sub on_res {
 }
 
-
-
 1;
 
 __END__

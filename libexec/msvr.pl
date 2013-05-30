@@ -46,8 +46,8 @@ sub {
         else{
             # 将采集信息发送给不同的分析器
             my ($app, $node, $type, @info) = split '\|', $packet;
-            $logger->debug("got [$app][$node][$type]: $packet");
-            $logger->debug("post to session[$app.on_message]...");
+            # $logger->debug("got [$app][$node][$type]: $packet");
+            # $logger->debug("post to session[$app.on_message]...");
             $poe_kernel->post($app, 'on_message', $node, $type, \@info);
         }
     };

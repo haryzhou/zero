@@ -53,7 +53,7 @@ sub spawn {
     $self->{zcfg}  = $zcfg;
     $self->{index} = $index;
 
-    POE::Session->create(
+    return POE::Session->create(
         object_states => [
             $self => { 
                 on_chnl_packet   => 'on_chnl_packet',    # 收到渠道报文
@@ -243,7 +243,7 @@ sub on_chnl_response {
     # 发送
     $self->{logger}->debug_hex("[$self->{name}] 发送渠道数据>>>>>>>>:", $packet);
     unless ($_[HEAP]{chnl}{$tran->{cid}}{wheel}) {
-        $self->{logger}->warn("");
+        $self->{logger}->warn("客户端已关闭");
         return 1;
     }
     

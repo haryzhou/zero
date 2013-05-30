@@ -60,7 +60,7 @@ sub spawn {
     $self->_setup();
 
     # 创建银行POS进程
-    POE::Session->create(
+    return POE::Session->create(
         object_states => [ 
             $self => { 
                'on_tran'         => 'on_tran',           # 收到tran的请求

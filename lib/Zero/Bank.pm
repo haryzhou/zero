@@ -12,11 +12,12 @@ use constant {
 };
 
 #--------------------------------------------
-#  name   => '银行名称',
-#  host   => '银行IP',
-#  port   => '银行端口',
-#  codec  => '过滤器',
-#  proc   => \%proc,
+#  name    => '银行名称',
+#  host    => '银行IP',
+#  port    => '银行端口',
+#  codec   => '过滤器',
+#  timeout => '超时时间',
+#  proc    => \%proc,
 #--------------------------------------------
 # Zero::Bank::SPD->new(
 #     name => 'spd',
@@ -62,10 +63,11 @@ sub spawn {
     POE::Session->create(
         object_states => [ 
             $self => { 
-               'on_tran'        => 'on_tran',           # 收到tran的请求
-               'on_bank_packet' => 'on_bank_packet',    # 收到银行的应答报文
-               'on_bank_error'  => 'on_bank_error',     #
-               'on_chnl_error'  => 'on_chnl_error',     # 
+               'on_tran'         => 'on_tran',           # 收到tran的请求
+               'on_bank_packet'  => 'on_bank_packet',    # 收到银行的应答报文
+               'on_bank_error'   => 'on_bank_error',     #
+               'on_chnl_error'   => 'on_chnl_error',     # 
+               'on_bank_timeout' => 'on_bank_timeout',   #
             },
         ],
         inline_states => {
@@ -125,8 +127,9 @@ sub on_tran {
 
     # 保存交易到堆: 通道+交易
     $_[HEAP]{bank}{$wheel->ID()} = {
-        wheel => $wheel, 
-        tran  => $tran,
+        wheel   => $wheel, 
+        tran    => $tran,
+        timeout => $_[KERNEL]->alarm_set('on_bank_timeout', time() + $self->{timeout}, $wheel->ID()),
     };
 
     # 银行请求报文打包
@@ -137,6 +140,18 @@ sub on_tran {
     $wheel->put($packet);
 }
 
+#
+# 银行超时
+#
+sub on_bank_timeout {
+    my ($self, $id) = @_[OBJECT, ARG0];
+    my $t = delete $_[HEAP]{bank}{$id};
+    $self->{logger}->warn("[$self->{name}] 银行超时: $t->{tran}{c_tcode}");
+
+    # 通知相应渠道释放资源
+    $_[KERNEL]->post($t->{tran}{chnl}, 'on_bank_error',$t->{tran}{cid});
+    1;
+}
 
 #
 # 收到银行数据
@@ -165,7 +180,7 @@ sub on_bank_packet {
 
     # 直接发送到chnl进程
     $tran->{cres} = $cres;
-    $_[KERNEL]->post($t->{tran}->{chnl}, 'on_chnl_res', $tran);
+    $_[KERNEL]->post($t->{tran}->{chnl}, 'on_chnl_response', $tran);
 
     return 1;
 }

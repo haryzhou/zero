@@ -78,7 +78,7 @@ sub on_chnl {
 
     # 2> 获取路由信息
     my $rif = $self->{route}->route($tran);
-    $self->{logger}->debug("[$self->{name}] 路由到$rif->{dst}");
+    $self->{logger}->debug("[tran] [$tran->{chnl}:$tran->{c_tcode}]路由到$rif->{dst}");
     $tran->{b_tcode} = $tran->{c_tcode};
 
     # 3> 发送给目标银行POE进程

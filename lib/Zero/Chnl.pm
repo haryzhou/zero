@@ -56,13 +56,13 @@ sub spawn {
     POE::Session->create(
         object_states => [
             $self => { 
-                on_chnl_packet  => 'on_chnl_packet',    # 收到渠道报文
-                on_chnl_res     => 'on_chnl_response',  # 响应渠道
-                on_accept       => 'on_accept',         # 渠道连接
-                on_la_error     => 'on_la_error',       # accept错误
-                on_chnl_flush   => 'on_chnl_flush',     # flush event
-                on_bank_error   => 'on_bank_error',     # 收到银行错误
-                on_chnl_error   => 'on_chnl_error',     # 渠道关闭连接
+                on_chnl_packet   => 'on_chnl_packet',    # 收到渠道报文
+                on_chnl_response => 'on_chnl_response',  # 响应渠道
+                on_accept        => 'on_accept',         # 渠道连接
+                on_la_error      => 'on_la_error',       # accept错误
+                on_chnl_flush    => 'on_chnl_flush',     # flush event
+                on_bank_error    => 'on_bank_error',     # 收到银行错误
+                on_chnl_error    => 'on_chnl_error',     # 渠道关闭连接
             },
         ],
         inline_states => {
@@ -119,8 +119,7 @@ sub on_chnl_packet {
     my $creq = $self->unpack($packet);
 
     # 设置内部交易代码(creq组匹配串)
-    my $tstr;
-    $tstr = $creq->[0].'.'.substr($creq->[3], 0, 2).'.'.substr($creq->[60], 0, 2);
+    my $tstr = $creq->[0].'.'.substr($creq->[3], 0, 2).'.'.substr($creq->[60], 0, 2);
 
     # 交易记录
     my $tran = {

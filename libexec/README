@@ -1,7 +1,8 @@
-plugin.pl  :  zeta加载插件
-main.pl    :  zeta主控应用
-magent.pl  :  监控节点应用
-simu.pl    :  银行模拟器
-worker.pl  :  zero工作进程
-msvr.pl    :  监控服务器
-backend.pl :  后线数据库同步
+plugin.pl    :  zeta加载插件
+main.pl      :  zeta主控应用
+worker.pl    :  zero工作进程
+backend.pl   :  后线数据库同步
+mlogd        :  日志监控-HTTPD
+magent.pl    :  应用监控-节点程序
+simu-bank.pl :  银行模拟器
+msvr.pl      :  监控服务器

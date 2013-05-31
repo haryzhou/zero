@@ -30,20 +30,10 @@ sub {
    		timeout      => $timeout,
    		throttle_max => $throttle_max
     };
-
-    # DBI storage
-    my $dbi_args = {
-        dsn      => $zcfg->{dbonl}{dsn},
-        username => $zcfg->{dbonl}{user},
-        password => $zcfg->{dbonl}{pass},
-        options  => undef,
-    };
-
     POE::Component::MessageQueue->new({
     	port     => $port,
     	hostname => $hostname,
     	storage   => POE::Component::MessageQueue::Storage::Default->new($dft_args),
-    	# storage   => POE::Component::MessageQueue::Storage::DBI->new($dbi_args),
     });
     
     $poe_kernel->run();

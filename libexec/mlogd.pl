@@ -20,8 +20,7 @@ sub {
     
     # 获取配置与日志
     my $zcfg = zkernel->zconfig();
-    my $logger = zlogger;
-    my $monq = $zcfg->{monq};
+    my $monq = zkernel->logger_monq();
    
     # 启动HTTPD POE
     my $httpd = Zeta::POE::HTTPD::JSON->spawn( 

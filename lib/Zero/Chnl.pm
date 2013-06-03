@@ -38,20 +38,10 @@ sub new {
 # $self->spawn($zcfg, $logger)
 #
 sub spawn {
-    my ($self, $zcfg, $logger, $index) = @_;
+    my ($self, $zcfg, $logger) = @_;
 
-#    my $logname;
-#    if ($index =~ /\d+/) {
-#        $logname = "Zchnl.$self->{name}.$index.log";
-#    }
-#    else {
-#        $logname = "Zchnl.$self->{name}.log";
-#    }
-
-    #$self->{logger} = $logger->clone($logname);
     $self->{logger} = $logger;
     $self->{zcfg}  = $zcfg;
-    $self->{index} = $index;
 
     return POE::Session->create(
         object_states => [

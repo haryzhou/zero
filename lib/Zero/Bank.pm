@@ -41,18 +41,7 @@ sub new {
 #
 sub spawn {
 
-    my ($self, $zcfg, $logger, $index) = @_;
-
-    # 日志 + 应用配置
-    # my $logname;
-    # if ($index =~ /\d+/) {
-    #     $logname = "Zbank.$self->{name}.$index.log";
-    # }
-    # else {
-    #     $logname = "Zbank.$self->{name}.log";
-    # }
-    # $self->{logger} = $logger->clone($logname);
-
+    my ($self, $zcfg, $logger) = @_;
     $self->{logger} = $logger;
     $self->{zcfg}   = $zcfg;
 

@@ -19,19 +19,9 @@ sub new {
 #
 sub spawn {
 
-    my ($self, $zcfg, $logger, $index) = @_;
+    my ($self, $zcfg, $logger) = @_;
 
-    # 重置日志
-    my $logname;
-    if ($index =~ /\d+/) {
-        $logname = "Zhsm.$index.log";
-    }
-    else {
-        $logname = "Zhsm.log";
-    }
-    $self->{logger} = $logger->clone($logname);
-
-    # $self->{check}  = Zero::Tran::Check->new($zcfg, $self->{logger});
+    $self->{logger} = $logger,
 
     # 建立tran
     return POE::Session->create(

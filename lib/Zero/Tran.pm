@@ -20,30 +20,17 @@ sub new {
 #
 sub spawn {
 
-    my ($self, $zcfg, $logger, $index) = @_;
+    my ($self, $zcfg, $logger) = @_;
 
-    # 重置日志
-    # my $logname;
-    # if ($index =~ /\d+/) {
-    #     $logname = "Ztran.$index.log";
-    # }
-    # else {
-    #     $logname = "Ztran.log";
-    # }
-    # $self->{logger} = $logger->clone($logname);
     $self->{logger} = $logger;
-
-    # 配置, 路由，控制
     $self->{zcfg}   = $zcfg;
     $self->{route}  = Zero::Tran::Route->new($zcfg, $self->{logger});
-    # $self->{check}  = Zero::Tran::Check->new($zcfg, $self->{logger});
 
-    # 建立tran
+    # 建立tran POE
     return POE::Session->create(
         object_states => [
             $self => {
                 on_chnl => 'on_chnl',     # 收到渠道请求
-                #on_bank => 'on_bank',     # 收到银行应答
             },
         ],
         inline_states => {

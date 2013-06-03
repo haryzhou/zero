@@ -42,10 +42,8 @@
     
 5、 log目录
     
-    Zsimu.log              : 模拟器日志
-    Zworker.N.log          : 第N个工作进程日志
-    Zchnl.CHNL_NAME.N.log  : 第N个工作进程的某个渠道日志
-    Zbank.BANK_NAME.N.log  : 第N个工作进程的某个银行日志
+    Zsimu-bank.log         : 模拟器日志
+    Zworker.N.log          : 第N个工作进程日志(bank, chnl, tran)
     Zbackend.log           : 测试用-后线流水同步进程
     Zmagent.log            : 监控节点进程日志
     Zstomp.log             : 测试用-可靠消息队列

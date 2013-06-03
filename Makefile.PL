@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 
 my @exec_files;
-push @exec_files, 'bin/' . $_ for qw/tchnl tsimu/;
+push @exec_files, 'bin/' . $_ for qw/tchnl tsimu tperf tpress/;
 
 WriteMakefile(
     NAME      => 'zero',
